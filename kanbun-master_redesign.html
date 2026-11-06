@@ -1,0 +1,1255 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>入試漢文ドリル</title>
+<script>
+/* 描画前にテーマを決めてちらつきを防ぐ：自分で選んだテーマ → なければOSの設定 */
+(function () {
+  var t = null;
+  try { t = localStorage.getItem("kanbun-drill-theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one centered column (max 760px) under a translucent sticky header (brand + light/dark switch, then three view tabs).
+   Style: 学習アプリ UI Style Guide — 静かなネイビーのニュートラル（H265）＋ Ink の主要ボタン ＋ 1画面1色のアクセント（オレンジ＝朱）。
+   意味色は固定：覚えた／正解＝グリーン、あいまい＝アンバー、不正解＝コーラル。教材は 句形＝バイオレット、成句＝ティール、単語＝ピンク。
+   見出しの漢文は縦書き（明朝）、答えは横書き。 */
+
+/* ============ Tokens : Light (default) ============ */
+:root {
+  --font: 'Manrope', 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --kan: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
+
+  --bg: oklch(.985 .004 265);
+  --surface: oklch(.995 .002 265);
+  --surface-2: oklch(.965 .006 265);
+  --surface-3: oklch(.94 .008 265);
+  --border: oklch(.90 .008 265);
+  --border-strong: oklch(.82 .010 265);
+  --text: oklch(.22 .02 265);
+  --text-2: oklch(.45 .02 265);
+  --text-3: oklch(.53 .02 265);
+
+  --ink: oklch(.30 .07 268);
+  --ink-hover: oklch(.38 .08 268);
+  --on-ink: oklch(.985 .004 265);
+  --on-accent: oklch(.20 .03 265);
+
+  --a-l: .72;
+  --atx-l: .46;
+
+  --sh-1: 0 1px 2px oklch(.25 .03 265 / .08);
+  --sh-2: 0 1px 2px oklch(.25 .03 265 / .06), 0 12px 28px -12px oklch(.25 .03 265 / .24);
+  --sh-3: 0 28px 56px -18px oklch(.25 .04 265 / .38);
+  --scrim: oklch(.22 .03 265 / .42);
+
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-io: cubic-bezier(.65, 0, .35, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+
+  --h: 55;
+  --c: .15;
+  color-scheme: light;
+}
+
+/* ============ Tokens : Dark ============ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: oklch(.17 .012 265);
+    --surface: oklch(.215 .014 265);
+    --surface-2: oklch(.25 .015 265);
+    --surface-3: oklch(.29 .016 265);
+    --border: oklch(.32 .016 265);
+    --border-strong: oklch(.42 .018 265);
+    --text: oklch(.95 .006 265);
+    --text-2: oklch(.76 .012 265);
+    --text-3: oklch(.65 .014 265);
+    --ink: oklch(.93 .03 268);
+    --ink-hover: oklch(.99 .01 268);
+    --on-ink: oklch(.20 .03 265);
+    --a-l: .76;
+    --atx-l: .82;
+    --sh-1: 0 1px 2px oklch(0 0 0 / .4);
+    --sh-2: 0 1px 2px oklch(0 0 0 / .3), 0 12px 28px -12px oklch(0 0 0 / .65);
+    --sh-3: 0 28px 56px -18px oklch(0 0 0 / .75);
+    --scrim: oklch(.08 .01 265 / .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: oklch(.17 .012 265);
+  --surface: oklch(.215 .014 265);
+  --surface-2: oklch(.25 .015 265);
+  --surface-3: oklch(.29 .016 265);
+  --border: oklch(.32 .016 265);
+  --border-strong: oklch(.42 .018 265);
+  --text: oklch(.95 .006 265);
+  --text-2: oklch(.76 .012 265);
+  --text-3: oklch(.65 .014 265);
+  --ink: oklch(.93 .03 268);
+  --ink-hover: oklch(.99 .01 268);
+  --on-ink: oklch(.20 .03 265);
+  --a-l: .76;
+  --atx-l: .82;
+  --sh-1: 0 1px 2px oklch(0 0 0 / .4);
+  --sh-2: 0 1px 2px oklch(0 0 0 / .3), 0 12px 28px -12px oklch(0 0 0 / .65);
+  --sh-3: 0 28px 56px -18px oklch(0 0 0 / .75);
+  --scrim: oklch(.08 .01 265 / .6);
+  color-scheme: dark;
+}
+
+/* ============ Accent palette ============ */
+/* 色相だけを変えた10色のうち、このアプリで使う色。要素に .acc と .a-* を付けるとその要素以下のアクセントが切り替わる */
+.a-coral { --h: 25; --c: .15; }
+.a-orange { --h: 55; --c: .15; }
+.a-amber { --h: 85; --c: .14; }
+.a-green { --h: 155; --c: .14; }
+.a-teal, .dk-s { --h: 190; --c: .11; }
+.a-blue { --h: 260; --c: .13; }
+.a-violet, .dk-k { --h: 295; --c: .15; }
+.a-pink, .dk-w { --h: 350; --c: .16; }
+:root, .acc, .dk-k, .dk-s, .dk-w {
+  --accent: oklch(var(--a-l) var(--c) var(--h));
+  --accent-strong: oklch(calc(var(--a-l) - .08) var(--c) var(--h));
+  --accent-text: oklch(var(--atx-l) calc(var(--c) * .9) var(--h));
+  --accent-soft: color-mix(in oklab, var(--accent) 15%, var(--surface));
+  --accent-line: color-mix(in oklab, var(--accent) 40%, var(--surface));
+}
+/* 意味色（アクセントの選択に関わらず固定）と、返り点の朱（＝主役のアクセント） */
+:root {
+  --ok: oklch(var(--a-l) .14 155);
+  --ok-text: oklch(var(--atx-l) .126 155);
+  --mid: oklch(var(--a-l) .14 85);
+  --ng-text: oklch(var(--atx-l) .135 25);
+  --shu: oklch(var(--atx-l) .135 55);
+}
+
+/* ============ Base ============ */
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.7; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; text-wrap: pretty; word-break: auto-phrase; }
+button, select, input { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; }
+@media (min-width: 640px) { .wrap { padding-inline: 24px; } }
+.num { font-variant-numeric: tabular-nums; }
+.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* テーマ切り替えの 360ms だけ、背景・文字・線の色をなめらかに補間する */
+html.theme-anim *:not(.seg-ind), html.theme-anim *::before, html.theme-anim *::after {
+  transition: background-color var(--dur-slow) var(--ease-out), border-color var(--dur-slow) var(--ease-out), color var(--dur-slow) var(--ease-out), fill var(--dur-slow) var(--ease-out), stroke var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out) !important;
+}
+
+/* ============ Type ============ */
+.over { font: 700 11px/1.4 var(--font); letter-spacing: .12em; color: var(--text-3); }
+.h2 { font: 700 24px/1.4 var(--font); color: var(--text); }
+.h3 { font: 700 18px/1.5 var(--font); color: var(--text); }
+.cap { font: 500 12px/1.5 var(--font); letter-spacing: .02em; color: var(--text-3); }
+.note { font: 400 13px/1.7 var(--font); color: var(--text-2); }
+.big { font: 700 36px/1 var(--font); letter-spacing: -.01em; color: var(--text); font-variant-numeric: tabular-nums; }
+.big small { font: 600 14px/1 var(--font); letter-spacing: 0; color: var(--text-2); margin-left: 6px; }
+
+/* ============ Header ============ */
+.top { position: sticky; top: 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); background: color-mix(in oklab, var(--bg) 84%, transparent); -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px); border-bottom: 1px solid var(--border); }
+.top-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; padding-block: 8px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 700 15px/1 var(--font); letter-spacing: .02em; color: var(--text); min-width: 0; white-space: nowrap; }
+.logo { width: 32px; height: 32px; border-radius: 10px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font: 700 18px/1 var(--kan); flex: none; }
+
+/* segmented control（テーマ切り替え・出題設定） */
+.seg { --n: 2; --i: 0; position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-3); border-radius: 99px; padding: 4px; }
+.seg button { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 4px 14px; border: 0; background: none; border-radius: 99px; color: var(--text-2); font: 600 13px/1.3 var(--font); cursor: pointer; transition: color var(--dur-base) var(--ease-out); }
+.seg button:hover { color: var(--text); }
+.seg button[aria-pressed="true"] { color: var(--text); }
+.seg-ind { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / var(--n)); border-radius: 99px; background: var(--surface); box-shadow: var(--sh-1); transform: translateX(calc(var(--i) * 100%)); transition: transform var(--dur-slow) var(--ease-spring); }
+.seg.block { display: grid; width: 100%; }
+.theme-seg button { white-space: nowrap; }
+:root[data-theme="dark"] .theme-seg { --i: 1; }
+@media (max-width: 479px) { .theme-seg .lbl { display: none; } .theme-seg button { padding-inline: 11px; } }
+
+/* view tabs */
+.vtabs { --i: 0; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vtab { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 8px; background: none; border: 0; border-radius: 10px 10px 0 0; color: var(--text-2); font: 600 14px/1 var(--font); cursor: pointer; white-space: nowrap; transition: color var(--dur-base) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+.vtab .ic { width: 16px; height: 16px; }
+.vtab:hover { color: var(--text); background: color-mix(in oklab, var(--surface-3) 70%, transparent); }
+.vtab[aria-selected="true"] { color: var(--accent-text); }
+.vtab-ind { position: absolute; left: 0; bottom: -1px; height: 3px; width: 33.3333%; border-radius: 3px 3px 0 0; background: var(--accent); transform: translateX(calc(var(--i) * 100%)); transition: transform var(--dur-slow) var(--ease-out); }
+@media (max-width: 359px) { .vtab .ic { display: none; } }
+
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-block: 24px 32px; }
+main > * { min-width: 0; }
+.rise { animation: rise calc(var(--dur-slow) * 2) var(--ease-out) var(--d, 0ms) both; }
+
+/* ============ Cards / sections ============ */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: clamp(18px, 4.5vw, 24px); display: grid; gap: 16px; min-width: 0; }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; }
+.row > .btn { flex: 1 1 160px; }
+.row.end { justify-content: flex-end; }
+.row.end > .btn { flex: 0 1 auto; min-width: 200px; }
+@media (max-width: 479px) { .row.end > .btn { flex: 1 1 100%; } }
+
+/* ============ Buttons ============ */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 20px; border-radius: var(--r-md); border: 1px solid transparent; background: none; font: 600 15px/1.3 var(--font); text-align: center; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out); }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--ink); color: var(--on-ink); }
+.btn.primary:hover:not(:disabled) { background: var(--ink-hover); }
+.btn.accent { background: var(--accent); color: var(--on-accent); }
+.btn.accent:hover:not(:disabled) { background: var(--accent-strong); box-shadow: 0 6px 16px -6px var(--accent); }
+.btn.secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+.btn.secondary:hover:not(:disabled) { background: var(--surface-2); }
+.btn.ghost { background: transparent; color: var(--text-2); }
+.btn.ghost:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+.btn.soft { background: var(--accent-soft); color: var(--accent-text); }
+.btn.soft:hover:not(:disabled) { background: color-mix(in oklab, var(--accent) 26%, var(--surface)); }
+.btn.sm { min-height: 36px; padding: 6px 14px; font-size: 13px; border-radius: 10px; }
+.btn.lg { min-height: 52px; padding: 12px 28px; font-size: 16px; border-radius: 14px; }
+.btn .arrow { transition: transform var(--dur-base) var(--ease-out); }
+.btn:hover .arrow { transform: translateX(3px); }
+
+/* ============ Chips / tags ============ */
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); font: 600 12px/1 var(--font); white-space: nowrap; }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); flex: none; }
+.chip.tint { background: var(--accent-soft); border-color: color-mix(in oklab, var(--accent) 22%, var(--surface)); color: var(--accent-text); }
+.chip.tint .dot { background: var(--accent); }
+.tag { display: inline-flex; align-items: center; min-height: 20px; padding: 0 7px; margin-right: 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-text); font: 700 11px/1 var(--font); letter-spacing: .02em; vertical-align: .18em; }
+.alt { display: block; }
+.alt + .alt { margin-top: 2px; }
+
+/* ============ Progress ============ */
+.stack { display: flex; height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.stack.thin { height: 6px; }
+.stack i { display: block; height: 100%; }
+.stack .k { background: var(--ok); }
+.stack .m { background: var(--mid); }
+.rise .stack i { animation: grow calc(var(--dur-slow) * 3) var(--ease-out) both; }
+.prog { display: flex; align-items: center; gap: 12px; }
+.prog .stack { flex: 1; }
+.pct { font: 600 13px/1 var(--font); color: var(--text-2); min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pct b { font-size: 15px; font-weight: 700; color: var(--text); }
+.track { flex: 1; min-width: 40px; height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width var(--dur-slow) var(--ease-out); }
+.ring { position: relative; width: var(--s, 96px); height: var(--s, 96px); flex: none; }
+.ring > svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+.ring circle { fill: none; stroke-width: 3.4; }
+.ring .trk { stroke: var(--surface-3); }
+.ring .val { stroke-linecap: round; }
+.ring .val.k { stroke: var(--ok); }
+.ring .val.m { stroke: var(--mid); }
+.ring .val.a { stroke: var(--accent); }
+.rise .ring .val { animation: ring-draw calc(var(--dur-slow) * 4) var(--ease-out) both; }
+.ring-n { position: absolute; inset: 0; display: grid; place-items: center; font: 700 calc(var(--s, 96px) * .24)/1 var(--font); color: var(--text); font-variant-numeric: tabular-nums; }
+.ring-n small { font-size: .55em; font-weight: 600; color: var(--text-2); margin-left: 1px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.dot.k { background: var(--ok); } .dot.m { background: var(--mid); } .dot.n { background: var(--border-strong); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2); display: grid; gap: 4px; min-width: 0; }
+.stat .lab { display: flex; align-items: flex-start; gap: 6px; font: 600 12px/1.4 var(--font); color: var(--text-2); overflow-wrap: anywhere; text-align: left; }
+.stat .lab .dot { margin-top: 4.5px; }
+.stat b { text-align: left; }
+.stat b { font: 700 22px/1.1 var(--font); color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ============ Home ============ */
+.hero { gap: 20px; box-shadow: var(--sh-2); border-radius: var(--r-xl); }
+.hero-h { display: flex; align-items: center; gap: 20px; }
+.hero-t { display: grid; gap: 8px; min-width: 0; }
+.decks { display: grid; gap: 16px; }
+.deck { gap: 14px; }
+.deck-top { display: flex; align-items: flex-start; gap: 14px; }
+.dmark { width: 48px; height: 48px; border-radius: 14px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; font: 700 22px/1 var(--kan); flex: none; }
+.deck-t { min-width: 0; display: grid; gap: 2px; }
+.deck-t h3 { font: 700 17px/1.4 var(--font); color: var(--text); }
+.deck-t p { font: 400 13px/1.6 var(--font); color: var(--text-3); }
+.grp-d summary { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px 0 8px; margin-left: -8px; border-radius: 10px; list-style: none; cursor: pointer; color: var(--text-2); font: 600 13px/1 var(--font); transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.grp-d summary::-webkit-details-marker { display: none; }
+.grp-d summary:hover { background: var(--surface-2); color: var(--text); }
+.grp-d summary .count { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--surface-3); color: var(--text-2); font: 700 11px/1 var(--font); }
+.chev { width: 16px; height: 16px; transition: transform var(--dur-base) var(--ease-out); }
+details[open] > summary .chev { transform: rotate(180deg); }
+.groups { display: grid; gap: 2px; margin-top: 6px; padding: 6px 12px; border-radius: var(--r-md); background: var(--surface-2); animation: fade var(--dur-slow) var(--ease-out) both; }
+.grp { display: grid; grid-template-columns: minmax(0, 9.5em) 1fr auto; gap: 12px; align-items: center; min-height: 32px; font: 500 13px/1.4 var(--font); color: var(--text-2); }
+.grp .stack { background: var(--surface-3); }
+.grp .g-c { font: 600 12px/1 var(--font); color: var(--text-3); min-width: 3.6em; text-align: right; }
+.history { display: grid; margin: 0; padding: 0; list-style: none; }
+.history li { display: flex; align-items: center; gap: 12px; min-height: 56px; padding-block: 8px; border-top: 1px solid var(--border); }
+.history li:first-child { border-top: 0; padding-top: 0; }
+.history .h-t { flex: 1; min-width: 0; display: grid; }
+.history .h-t b { font: 600 14px/1.4 var(--font); color: var(--text); }
+.history .h-t span { font: 500 12px/1.5 var(--font); color: var(--text-3); }
+.history .score { display: inline-flex; align-items: center; gap: 6px; font: 700 15px/1 var(--font); color: var(--text); white-space: nowrap; }
+.history .score.good { color: var(--ok-text); }
+.history .score .ic { width: 16px; height: 16px; stroke-width: 3; }
+
+/* ============ Settings ============ */
+.settings { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
+.settings > summary { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px 8px 10px; list-style: none; cursor: pointer; border-radius: var(--r-lg); transition: background-color var(--dur-fast) var(--ease-out); }
+.settings > summary::-webkit-details-marker { display: none; }
+.settings > summary:hover { background: var(--surface-2); }
+.settings[open] > summary { border-bottom: 1px solid var(--border); border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.sum-ic { width: 36px; height: 36px; border-radius: 10px; background: var(--surface-3); color: var(--text-2); display: grid; place-items: center; flex: none; }
+.sum-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 14px/1.4 var(--font); color: var(--text); }
+.sum-r { display: inline-flex; align-items: center; gap: 4px; font: 600 13px/1 var(--font); color: var(--accent-text); white-space: nowrap; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.settings .controls { padding: 18px 16px 20px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+@media (max-width: 559px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.label { font: 600 13px/1.4 var(--font); color: var(--text-2); }
+.select { position: relative; }
+.select select { -webkit-appearance: none; appearance: none; width: 100%; height: 44px; border-radius: var(--r-md); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); padding: 0 40px 0 14px; font: 500 15px/1 var(--font); cursor: pointer; transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+.select select:hover:not(:disabled) { border-color: var(--text-3); }
+.select select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 24%, transparent); }
+.select select:disabled { opacity: .5; cursor: not-allowed; background: var(--surface-2); }
+.select .ic { position: absolute; right: 14px; top: 13px; color: var(--text-3); pointer-events: none; }
+.switch { position: relative; display: inline-flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; font: 500 15px/1.4 var(--font); color: var(--text); align-self: end; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.trk { position: relative; width: 48px; height: 28px; border-radius: 99px; background: var(--surface-3); border: 1px solid var(--border-strong); flex: none; transition: background-color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+.thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); box-shadow: var(--sh-1); transition: transform var(--dur-base) var(--ease-spring), background-color var(--dur-base) var(--ease-out); }
+.switch input:checked + .trk { background: var(--accent); border-color: var(--accent); }
+.switch input:checked + .trk .thumb { transform: translateX(20px); background: oklch(.99 0 0); }
+.switch input:focus-visible + .trk { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ============ Session bar ============ */
+.sbar { display: flex; align-items: center; gap: 12px; font: 600 13px/1 var(--font); color: var(--text-2); min-height: 32px; }
+.sbar b { font-size: 15px; color: var(--text); }
+.sb-ok { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.sb-ok .ic { width: 15px; height: 15px; stroke-width: 3; color: var(--ok-text); }
+
+/* ============ Vertical headword: each unit = 返り点 | 漢字 | 送り仮名 ============ */
+.vterm { display: flex; flex-direction: row-reverse; justify-content: center; align-items: flex-start; gap: .55em; font-family: var(--kan); font-weight: 700; font-size: var(--vs, 2rem); line-height: 1; color: var(--text); }
+.vcol { display: flex; flex-direction: column; align-items: center; }
+.u { display: grid; grid-template-columns: .5em 1em .55em; grid-template-rows: 1.2em auto; }
+.u-c { grid-row: 1; grid-column: 2; width: 1em; height: 1.2em; line-height: 1.2em; text-align: center; }
+.u-k { grid-row: 1; grid-column: 1; align-self: end; justify-self: end; display: flex; flex-direction: column; align-items: center; font-family: var(--font); font-size: .44em; line-height: 1.02; color: var(--shu); padding-bottom: .15em; }
+.u-o { grid-row: 1 / span 2; grid-column: 3; justify-self: start; display: flex; flex-direction: column; align-items: center; font-size: .5em; line-height: 1.04; padding-top: 1.1em; font-weight: 500; }
+/* 縦書きで向きが変わる記号は字ごとに回す・寄せる */
+.vterm .rot { display: inline-block; transform: rotate(90deg); }
+.vterm .dotp { display: inline-block; transform: translate(.55em, -.5em); }
+.term { display: grid; justify-items: center; gap: 12px; min-width: 0; }
+.term-w { --vs: clamp(2.3rem, 9vw, 3rem); }
+.term-s { --vs: clamp(1.9rem, 7.5vw, 2.5rem); }
+.term-k { --vs: clamp(1.55rem, 6vw, 2rem); }
+.kk-ps { font: 400 13px/1.9 var(--font); color: var(--text-2); max-width: 32em; text-align: center; }
+
+/* kanbun markup in horizontal lines (例文・書き下し) */
+.ok { font-size: .52em; vertical-align: .62em; margin-left: .04em; letter-spacing: 0; font-weight: 500; }
+.kt { font-family: var(--font); font-size: .48em; vertical-align: -.28em; color: var(--shu); margin: 0 .06em; font-weight: 700; letter-spacing: 0; }
+ruby { ruby-position: over; }
+rt { font-size: .5em; color: var(--text-3); font-family: var(--font); }
+
+/* ============ Flash card ============ */
+.fcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); padding: 16px clamp(16px, 4.5vw, 24px) 18px; display: grid; gap: 12px; min-height: 340px; grid-template-rows: auto 1fr auto; cursor: pointer; box-shadow: var(--sh-1); transition: box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+.fcard:hover { box-shadow: var(--sh-2); border-color: var(--border-strong); }
+.card-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; }
+.card-meta .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.card-meta .mode { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1.5 var(--font); color: var(--text-3); }
+.card-meta .mode .ic { width: 14px; height: 14px; }
+.card-body { display: grid; gap: 16px; align-content: center; min-width: 0; }
+.card-front { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding-block: 16px; min-width: 0; }
+.fcard.is-new .card-front { animation: rise var(--dur-slow) var(--ease-out) both; }
+.card-back { border-top: 1px solid var(--border); padding-top: 16px; display: grid; gap: 14px; min-width: 0; align-content: start; animation: rise var(--dur-slow) var(--ease-out) both; }
+.fcard.flipped .term-w { --vs: clamp(2rem, 7vw, 2.4rem); }
+.fcard.flipped .term-s { --vs: clamp(1.7rem, 6vw, 2.1rem); }
+.fcard.flipped .term-k { --vs: clamp(1.4rem, 5vw, 1.7rem); }
+@media (min-width: 640px) {
+  .fcard.split .card-body { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+  .fcard.split .card-front { grid-column: 2; grid-row: 1; padding: 4px 0 4px 20px; border-left: 1px solid var(--border); }
+  .fcard.split .card-back { grid-column: 1; grid-row: 1; border-top: 0; padding-top: 4px; }
+  .fcard.split .kk-ps { max-width: 13em; }
+}
+.tap-hint { display: flex; align-items: center; justify-content: center; gap: 6px; font: 500 12px/1.5 var(--font); color: var(--text-3); }
+.tap-hint .ic { width: 14px; height: 14px; }
+.front-mean { font: 500 clamp(1.15rem, 4.4vw, 1.4rem)/1.75 var(--font); max-width: 26em; color: var(--text); }
+
+/* answer block */
+.ans-row { display: grid; grid-template-columns: 3.4em minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.ans-row.ex-row { align-items: start; }
+.ans-row.ex-row .ans-label { padding-top: 4px; }
+.ans-label { font: 700 11px/1.4 var(--font); letter-spacing: .12em; color: var(--text-3); }
+.ans-read { font-family: var(--kan); font-size: 1.35rem; line-height: 2; overflow-wrap: anywhere; color: var(--text); }
+.ans-mean { font: 500 17px/1.85 var(--font); overflow-wrap: anywhere; color: var(--text); }
+/* 例文：縦書き。右から 白文 → 出典 → 書き下し → 訳 の順に並び、横にはみ出す分はスクロール */
+.ex-wrap { min-width: 0; }
+.ex-list { writing-mode: vertical-rl; display: flex; flex-direction: column; gap: 10px; height: 21rem; overflow-x: auto; overflow-y: hidden; min-width: 0; max-width: 100%; padding-block-end: 2px; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.ex { background: var(--surface-2); border-radius: var(--r-md); padding: 14px 10px; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--border); flex: none; }
+.ex-kun { font-family: var(--kan); font-size: 1.22rem; line-height: 2.3; letter-spacing: .04em; color: var(--text); }
+.ex-src { font: 700 12px/1.6 var(--font); color: var(--shu); }
+.ex-kaki { font-family: var(--kan); font-size: 1.02rem; line-height: 2.1; color: var(--text); }
+.ex-yaku { font: 400 14px/1.8 var(--font); color: var(--text-2); }
+.ex .kt { vertical-align: -.35em; }
+.ex .ok { vertical-align: .55em; }
+.ex-help { font: 500 12px/1.6 var(--font); color: var(--text-3); margin-top: 6px; }
+
+/* WASD pad */
+.pad { display: grid; gap: 10px; justify-items: center; }
+.pad-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.pad-row .btn { flex-direction: column; gap: 4px; min-height: 64px; padding: 8px 6px; border-radius: 14px; font-size: 15px; }
+.pad .skip { min-width: 33%; }
+kbd { font: 500 11px/1 var(--mono); padding: 3px 6px; border-radius: 6px; background: color-mix(in oklab, currentColor 10%, transparent); border: 1px solid color-mix(in oklab, currentColor 22%, transparent); opacity: .9; white-space: nowrap; }
+.kb { display: none; }
+.kbd-hint { display: none; font: 500 12px/2.1 var(--font); color: var(--text-3); text-align: center; }
+.kbd-hint kbd { color: var(--text-2); }
+@media (hover: hover) and (pointer: fine) { .kb { display: inline; } .kbd-hint { display: block; } }
+
+/* empty / done */
+.empty { justify-items: center; text-align: center; padding-block: 32px; }
+.empty .row { width: 100%; }
+.empty .stats { width: 100%; max-width: 420px; }
+.badgebig { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; animation: pop calc(var(--dur-slow) * 1.6) var(--ease-spring) .15s both; }
+.badgebig .ic { width: 28px; height: 28px; stroke-width: 3; }
+
+/* ============ Test ============ */
+.q-card { gap: 8px; }
+.q-ask { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.q { font: 700 17px/1.6 var(--font); color: var(--text); }
+.q-term { padding-block: 12px; min-width: 0; }
+.options { display: grid; gap: 8px; }
+.opt { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 14px 10px 12px; border-radius: var(--r-md); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: 500 15px/1.65 var(--font); text-align: left; cursor: pointer; transition: border-color var(--dur-base) var(--ease-out), background-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out); }
+.opt:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface-2); transform: translateX(3px); }
+.opt:disabled { cursor: default; }
+.opt .key { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--surface-3); color: var(--text-2); font: 700 13px/1 var(--font); transition: background-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
+.opt .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.opt .t.kan { font-family: var(--kan); font-size: 1.08rem; line-height: 2.1; }
+.opt .mark { display: none; align-items: center; gap: 6px; margin-left: auto; font: 700 12px/1 var(--font); color: var(--accent-text); white-space: nowrap; flex: none; }
+.opt .mark i { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+.opt .mark .ic { width: 14px; height: 14px; stroke-width: 3.2; }
+.opt.is-correct, .opt.is-wrong { border-color: var(--accent); background: var(--accent-soft); }
+.opt.is-correct .key, .opt.is-wrong .key { background: var(--accent); color: var(--on-accent); }
+.opt.is-correct .mark, .opt.is-wrong .mark { display: inline-flex; }
+.opt.is-correct .mark i, .opt.is-wrong .mark i { animation: pop calc(var(--dur-slow) * 1.5) var(--ease-spring) both; }
+.opt.is-wrong { animation: shake .42s var(--ease-out); }
+.opt.dim { opacity: .5; }
+@media (max-width: 479px) { .opt .mark .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+.fb { border-color: var(--accent-line); background: color-mix(in oklab, var(--accent) 5%, var(--surface)); gap: 14px; animation: rise var(--dur-slow) var(--ease-out) both; }
+.verdict { display: flex; align-items: center; gap: 10px; font: 700 18px/1.4 var(--font); color: var(--accent-text); }
+.v-ic { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; animation: pop calc(var(--dur-slow) * 1.5) var(--ease-spring) both; }
+.v-ic .ic { width: 16px; height: 16px; stroke-width: 3.2; }
+.res-h { display: flex; align-items: center; gap: 20px; }
+.res-h .sub { font: 500 13px/1.6 var(--font); color: var(--text-2); margin-top: 8px; }
+.alert { display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--r-md); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.alert .ic { color: var(--accent-text); margin-top: 2px; width: 20px; height: 20px; }
+.alert b { display: block; font: 700 14px/1.5 var(--font); color: var(--text); }
+.miss-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.miss-list li { padding-block: 14px; border-top: 1px solid var(--border); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+.miss-list li:first-child { border-top: 0; padding-top: 4px; }
+.miss-list .term { --vs: 1.3rem; }
+.miss-list .kk-ps { max-width: 12em; font-size: 12px; }
+.miss-txt { display: grid; gap: 6px; min-width: 0; justify-items: start; font: 400 14px/1.7 var(--font); overflow-wrap: anywhere; }
+.miss-line { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; width: 100%; }
+.miss-line .ic { width: 16px; height: 16px; stroke-width: 3; margin-top: 4px; }
+.miss-line .lbl { display: block; font: 700 11px/1.4 var(--font); letter-spacing: .08em; }
+.miss-line.ok-l .ic, .miss-line.ok-l .lbl { color: var(--ok-text); }
+.miss-line.ng-l .ic, .miss-line.ng-l .lbl { color: var(--ng-text); }
+.miss-line.ng-l .v { color: var(--text-2); }
+
+/* ============ Footer / dialog / toast ============ */
+.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-block: 20px 40px; border-top: 1px solid var(--border); font: 400 13px/1.6 var(--font); color: var(--text-3); }
+.save { display: inline-flex; align-items: center; gap: 8px; }
+.save .ic { width: 16px; height: 16px; }
+/* リセット確認：画面上部に出し、「消す」はリセットボタン（右下）から遠い左側に置く */
+.overlay { position: fixed; inset: 0; z-index: 30; background: var(--scrim); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: flex-start; padding: calc(env(safe-area-inset-top, 0px) + 12vh) 16px 16px; animation: fade var(--dur-base) var(--ease-out) both; }
+.dialog { width: 100%; max-width: 440px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-xl); padding: 24px; display: grid; gap: 14px; box-shadow: var(--sh-3); animation: rise var(--dur-slow) var(--ease-out) both; }
+.d-ic { width: 44px; height: 44px; border-radius: 14px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; }
+.dialog h2 { font: 700 18px/1.5 var(--font); }
+.dialog p { font: 400 14px/1.7 var(--font); color: var(--text-2); }
+.dialog-actions { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.toast-host { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); z-index: 40; display: flex; justify-content: center; padding-inline: 16px; pointer-events: none; }
+.toast { display: inline-flex; align-items: center; gap: 12px; padding: 12px 18px 12px 14px; border-radius: var(--r-md); background: var(--ink); color: var(--on-ink); box-shadow: var(--sh-2); font: 600 14px/1.4 var(--font); animation: toast 2.6s var(--ease-out) both; }
+.toast .t-ok { width: 24px; height: 24px; border-radius: 50%; background: oklch(.72 .14 155); color: oklch(.2 .03 265); display: grid; place-items: center; flex: none; }
+.toast .t-ok .ic { width: 14px; height: 14px; stroke-width: 3; }
+
+/* ============ Keyframes ============ */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } }
+@keyframes grow { from { width: 0; } }
+@keyframes ring-draw { from { stroke-dasharray: 0 100; } }
+@keyframes pop { 0% { transform: scale(.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 55% { transform: translateX(4px); } 80% { transform: translateX(-2px); } }
+@keyframes toast { 0% { opacity: 0; transform: translateY(14px) scale(.98); } 10% { opacity: 1; transform: none; } 86% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 1ms; --dur-base: 1ms; --dur-slow: 1ms; }
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="top-in">
+      <div class="brand"><span class="logo" aria-hidden="true">漢</span><span>入試漢文ドリル</span></div>
+      <div class="seg theme-seg" role="group" aria-label="カラーモード">
+        <span class="seg-ind"></span>
+        <button type="button" data-mode="light" aria-pressed="true" aria-label="ライト"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><span class="lbl">ライト</span></button>
+        <button type="button" data-mode="dark" aria-pressed="false" aria-label="ダーク"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><span class="lbl">ダーク</span></button>
+      </div>
+    </div>
+    <nav class="vtabs" role="tablist" aria-label="画面の切り替え">
+      <button type="button" role="tab" class="vtab" id="tab-home" data-view="home"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>進捗</button>
+      <button type="button" role="tab" class="vtab" id="tab-cards" data-view="cards"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="14" height="14" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/></svg>暗記カード</button>
+      <button type="button" role="tab" class="vtab" id="tab-test" data-view="test"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>ミニテスト</button>
+      <span class="vtab-ind" aria-hidden="true"></span>
+    </nav>
+  </div>
+</header>
+<main class="wrap" id="app" aria-live="polite"></main>
+<footer class="wrap">
+  <div class="foot">
+    <span class="save"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78A6 6 0 0 0 4 12.5 3.5 3.5 0 0 0 6.5 19z"/></svg><span id="saveState">進捗はこのブラウザに保存されます</span></span>
+    <span id="resetArea"></span>
+  </div>
+</footer>
+<div class="toast-host" id="toastHost" aria-live="polite"></div>
+
+<script>
+"use strict";
+const DATA = {"decks":[{"id":"k","name":"句形と例文","short":"句形","badge":"句","unit":"項目","desc":"否定・疑問・反語・使役・受身など13分類。例文101文つき","groups":["否定","二重否定","部分否定・否定の慣用","疑問","反語","詠嘆","使役","受身","限定・累加","比較・選択","仮定","抑揚","願望"],"items":[{"no":1,"g":"否定","term":"不〔二〕～〔一〕（弗）（～：未然形）","read":"～（せ）ず","mean":"～しない。・～でない。","ex":[{"kun":"歳月不〔レ〕待《タ》〔レ〕人《ヲ》。","src":"陶潜・雑詩","kaki":"歳月《さいげつ》人《ひと》を待《ま》たず。","yaku":"時の流れは人を待たない。"}],"id":"k1"},{"no":2,"g":"否定","term":"非《ズ》〔二〕～《ニ》〔一〕（匪）（～：体言）","read":"～に非《あら》ず","mean":"～でない。・～ではない。","ex":[{"kun":"富貴《ハ》非《ズ》〔二〕吾《ガ》願《ヒニ》〔一〕。","src":"陶潜・帰去来辞","kaki":"富貴《ふうき》は吾《わ》が願《ねが》ひに非《あら》ず。","yaku":"富や高い地位は私の願いではない。"}],"id":"k2"},{"no":3,"g":"否定","term":"無《シ》〔二〕～〔一〕（莫・勿・毋）（～：体言）","read":"～無《な》し","mean":"～がない。","ex":[{"kun":"蛇固《ヨリ》無《シ》〔レ〕足。","src":"戦国策","kaki":"蛇《へび》固《もと》より足《あし》無《な》し。","yaku":"蛇はもともと足がない。"}],"id":"k3"},{"no":4,"g":"否定","term":"勿《カレ》〔二〕～〔一〕（莫・毋・無）（～：連体形［コト］）","read":"～（する）［こと］勿《な》かれ","mean":"～してはいけない。（禁止）","ex":[{"kun":"己《ノ》所《ハ》〔レ〕不《ル》〔レ〕欲《セ》、勿《カレ》〔レ〕施《スコト》〔二〕於人《ニ》〔一〕。","src":"論語","kaki":"己《おのれ》の欲《ほつ》せざる所《ところ》は、人《ひと》に施《ほどこ》すこと勿《な》かれ。","yaku":"自分がしてほしくないことは、他人にしてはいけない。"}],"id":"k4"},{"no":5,"g":"否定","term":"不〔レ〕可《カラ》〔二〕～〔一〕（～：終止形）","read":"～（す）べからず","mean":"～できない。（不可能）／～してはいけない。（禁止）","ex":[{"kun":"深不〔レ〕可《カラ》〔レ〕測《ル》。","src":"淮南子","kaki":"深《しん》測《はか》るべからず。","yaku":"奥深さは推測することができない。"},{"kun":"一寸《ノ》光陰不〔レ〕可《カラ》〔レ〕軽《ンズ》。","src":"伝・五山僧","kaki":"一寸《いつすん》の光陰《くわういん》軽《かろ》んずべからず。","yaku":"ほんの少しの時間も軽く扱ってはいけない。"}],"id":"k5"},{"no":6,"g":"否定","term":"不〔レ〕能《ハ》〔二〕～〔一〕（～：連体形［コト］）","read":"～（する）［こと］能《あた》はず","mean":"～できない。（不可能）","ex":[{"kun":"口不〔レ〕能《ハ》〔レ〕言《フ》。","src":"荘子","kaki":"口《くち》言《い》ふ能《あた》はず。","yaku":"口で説明することはできない。"}],"id":"k6"},{"no":7,"g":"否定","term":"不〔レ〕得〔二〕～《ヲ》〔一〕（～：連体形）","read":"～（する）を得《え》ず","mean":"～できない。（不可能）／～してはいけない。（禁止）","ex":[{"kun":"不〔レ〕得〔レ〕入《ルヲ》。","src":"史記","kaki":"入《い》るを得《え》ず。","yaku":"入ることができない。"}],"id":"k7"},{"no":8,"g":"二重否定","term":"無《シ》〔レ〕不《ル［ハ］》〔二〕～〔一〕（莫）（～：未然形）","read":"～（せ）ざる［は］無《な》し","mean":"～しないものはない。","ex":[{"kun":"理《トシテ》無《シ》〔レ〕不《ルハ》〔レ〕死《セ》。","src":"列子","kaki":"理《り》として死《し》せざるは無《な》し。","yaku":"道理として死なないものはない。"}],"id":"k8"},{"no":9,"g":"二重否定","term":"無《シ》〔レ〕非《ザル［ハ］》〔二〕～《ニ》〔一〕（莫）（～：体言）","read":"～に非《あら》ざる［は］無《な》し","mean":"～でないものはない。","ex":[{"kun":"無《キ》〔レ〕非《ザルハ》〔レ〕教《ヘニ》也。","src":"礼記","kaki":"教《をし》へに非《あら》ざるは無《な》きなり。","yaku":"教訓にならないものはない。"}],"id":"k9"},{"no":10,"g":"二重否定","term":"非《ズ》〔レ〕不《ルニ》〔二〕～〔一〕（～：未然形）","read":"～（せ）ざるに非《あら》ず","mean":"～しないのではない。","ex":[{"kun":"吾非《ズ》〔レ〕不《ルニ》〔レ〕知《ラ》。","src":"説苑","kaki":"吾《われ》知《し》らざるに非《あら》ず。","yaku":"私は知らないのではない。"}],"id":"k10"},{"no":11,"g":"二重否定","term":"非《ズ》〔レ〕無《キニ》〔二〕～〔一〕（～：体言）","read":"～無《な》きに非《あら》ず","mean":"～がないのではない。","ex":[{"kun":"非《ザル》〔レ〕無《キニ》〔二〕賢人〔一〕也。","src":"荀子","kaki":"賢人《けんじん》無《な》きに非《あら》ざるなり。","yaku":"賢人がいないのではないのだ。"}],"id":"k11"},{"no":12,"g":"二重否定","term":"不〔レ〕可《カラ》〔レ〕不《ル》〔二〕～〔一〕（～：未然形）","read":"～（せ）ざるべからず","mean":"～しなければならない。","ex":[{"kun":"不《ル》〔レ〕可《カラ》〔レ〕不《ル》〔レ〕知《ラ》也。","src":"論語","kaki":"知《し》らざるべからざるなり。","yaku":"知っていなければならないのだ。"}],"id":"k12"},{"no":13,"g":"二重否定","term":"不〔レ〕得〔レ〕不《ルヲ》〔二〕～〔一〕（～：未然形）","read":"～（せ）ざるを得《え》ず","mean":"～しないわけにはいかない。","ex":[{"kun":"不〔レ〕得〔レ〕不《ルヲ》〔レ〕除《カ》〔レ〕之《ヲ》。","src":"世説新語","kaki":"之《これ》を除《のぞ》かざるを得《え》ず。","yaku":"これを除かないわけにはいかない。"}],"id":"k13"},{"no":14,"g":"二重否定","term":"未《ダ》〔三〕嘗《テ》不《ンバアラ》〔二〕～〔一〕（～：未然形）","read":"未《いま》だ嘗《かつ》て～（せ）ずんばあらず","mean":"今まで～しなかったことはない。","ex":[{"kun":"吾未《ダ》〔ル〕〔二〕嘗《テ》不《ンバアラ》〔一レ〕得〔レ〕見《ユルヲ》也。","src":"論語","kaki":"吾《われ》未《いま》だ嘗《かつ》て見《まみ》ゆるを得《え》ずんばあらざるなり。","yaku":"私は今までお目にかかれなかったことはない。"}],"id":"k14"},{"no":15,"g":"二重否定","term":"不〔三〕必《ズシモ》不《ンバアラ》〔二〕～〔一〕（～：未然形）","read":"必《かなら》ずしも～（せ）ずんばあらず","mean":"必ずしも～しないとは限らない。","ex":[{"kun":"弟子《ハ》不〔二〕必《ズシモ》不《ンバアラ》〔一レ〕如《カ》〔レ〕師《ニ》。","src":"韓愈・師説","kaki":"弟子《ていし》は必《かなら》ずしも師《し》に如《し》かずんばあらず。","yaku":"弟子は必ずしも師に及ばないとは限らない。"}],"id":"k15"},{"no":16,"g":"二重否定","term":"不〔三〕敢《ヘテ》不《ンバアラ》〔二〕～〔一〕（～：未然形）","read":"敢《あ》へて～（せ）ずんばあらず","mean":"どうしても～しないではいられない。","ex":[{"kun":"不《ル》〔二〕敢《ヘテ》不《ンバアラ》〔一レ〕告《ゲ》也。","src":"論語","kaki":"敢《あ》へて告《つ》げずんばあらざるなり。","yaku":"どうしても申し上げないではいられない。"}],"id":"k16"},{"no":17,"g":"二重否定","term":"無《シ》〔二〕A《トシテ》不《ルハ》〔一レ〕B（B：未然形）","read":"Aとして B（せ）ざるは無《な》し","mean":"BしないAはない。","ex":[{"kun":"無《シ》〔二〕夕《トシテ》不《ルハ》〔一レ〕飲《マ》。","src":"陶潜・飲酒","kaki":"夕《ゆふべ》として飲《の》まざるは無《な》し。","yaku":"飲まない夜はない。"}],"id":"k17"},{"no":18,"g":"部分否定・否定の慣用","term":"不〔二〕常《ニハ》～〔一〕（～：未然形）","read":"常《つね》には～（せ）ず","mean":"いつも～するとは限らない。","ex":[{"kun":"家貧《シクシテ》不〔二〕常《ニハ》得〔一レ〕油《ヲ》。","src":"晋書","kaki":"家《いへ》貧《まづ》しくして常《つね》には油《あぶら》を得《え》ず。","yaku":"家が貧しくていつも油が手に入るとは限らなかった。"}],"id":"k18"},{"no":19,"g":"部分否定・否定の慣用","term":"不〔二〕尽《クハ》～〔一〕（～：未然形）","read":"尽《ことごと》くは～（せ）ず","mean":"すべて～するとは限らない。","ex":[{"kun":"民不〔二〕尽《クハ》賢《ナラ》〔一〕。","src":"韓非子","kaki":"民《たみ》尽《ことごと》くは賢《けん》ならず。","yaku":"民はすべて賢者であるとは限らない。"}],"id":"k19"},{"no":20,"g":"部分否定・否定の慣用","term":"不〔二〕甚《ダシクハ》～〔一〕（～：未然形）","read":"甚《はなは》だしくは～（せ）ず","mean":"それほどには～しない。","ex":[{"kun":"好《メドモ》〔レ〕読《ムコトヲ》〔レ〕書《ヲ》、不〔レ〕求《メ》〔二〕甚《ダシクハ》解《センコトヲ》〔一〕。","src":"陶潜・五柳先生伝","kaki":"書《しよ》を読《よ》むことを好《この》めども、甚《はなは》だしくは解《かい》せんことを求《もと》めず。","yaku":"本を読むのは好きだが、それほどには理解しようとは思わない。"}],"id":"k20"},{"no":21,"g":"部分否定・否定の慣用","term":"不〔二〕必《ズシモ》～〔一〕（～：未然形）","read":"必《かなら》ずしも～（せ）ず","mean":"必ずしも～するとは限らない。","ex":[{"kun":"勇者《ハ》不〔二〕必《ズシモ》有《ラ》〔一レ〕仁。","src":"論語","kaki":"勇者《ゆうしや》は必《かなら》ずしも仁《じん》有《あ》らず。","yaku":"勇者は必ずしも仁徳があるとは限らない。"}],"id":"k21"},{"no":22,"g":"部分否定・否定の慣用","term":"不〔二〕復《タ》～〔一〕（～：未然形）","read":"復《ま》た～（せ）ず","mean":"二度と～しない。（「復タハ」と送らない。「～とは限らない」と訳さない）","ex":[{"kun":"終身不〔二〕復《タ》鼓《セ》〔一レ〕琴《ヲ》。","src":"蒙求","kaki":"終身《しゆうしん》復《ま》た琴《きん》を鼓《こ》せず。","yaku":"生涯二度と琴を弾かなかった。"}],"id":"k22"},{"no":23,"g":"部分否定・否定の慣用","term":"不〔二〕敢《ヘテ》～〔一〕（～：未然形）","read":"敢《あ》へて～（せ）ず","mean":"～しようとしない。","ex":[{"kun":"側《メテ》〔レ〕目《ヲ》不〔二〕敢《ヘテ》視〔一〕。","src":"十八史略","kaki":"目《め》を側《そば》めて敢《あ》へて視《み》ず。","yaku":"目をそらして見ようとしなかった。"}],"id":"k23"},{"no":24,"g":"部分否定・否定の慣用","term":"不〔二〕肯《ヘテ》～〔一〕（～：未然形）※「不〔レ〕肯《ンゼ》〔二〕～《（スル）ヲ》〔一〕」（～するを肯《がへん》ぜず）とも読む","read":"肯《あ》へて～（せ）ず","mean":"～しようとしない。","ex":[{"kun":"始《メ》不〔二〕肯《ヘテ》告《ゲ》〔一〕。","src":"後漢書","kaki":"始《はじ》め肯《あ》へて告《つ》げず。","yaku":"始めは告げようとしなかった。"}],"id":"k24"},{"no":25,"g":"部分否定・否定の慣用","term":"不〔レ〕可《カラ》〔二〕勝《ゲテ》～〔一〕（～：終止形）※「不〔レ〕可《カラ》〔レ〕勝《フ》〔二〕～《（スル）ニ》〔一〕」（～するに勝《た》ふべからず）とも読む","read":"勝《あ》げて～（す）べからず","mean":"～しきれないほどだ。","ex":[{"kun":"穀不《ル》〔レ〕可《カラ》〔二〕勝《ゲテ》食《ラフ》〔一〕也。","src":"孟子","kaki":"穀《こく》勝《あ》げて食《く》らふべからざるなり。","yaku":"穀物は食べきれないほどである。"}],"id":"k25"},{"no":26,"g":"部分否定・否定の慣用","term":"無《ク》〔レ〕A《ト》無《ク》〔レ〕B《ト》　※「無《ク》〔二〕AB《ト》〔一〕」も同じ","read":"Aと無《な》くBと無《な》く","mean":"AとBの区別なく（AとBは対義語）","ex":[{"kun":"無《ク》〔レ〕貴《ト》無《ク》〔レ〕賤《ト》、","src":"韓愈・師説","kaki":"貴《き》と無《な》く賤《せん》と無《な》く、","yaku":"身分の貴賤の区別なく、"}],"id":"k26"},{"no":27,"g":"疑問","term":"～乎（～：連体形）／～乎（～：体言）（乎＝邪・耶・哉・也・与・歟）","read":"～（する）か／～か","mean":"～か。","ex":[{"kun":"仲尼《ハ》賢《ナル》乎。","src":"説苑","kaki":"仲尼《ちゆうぢ》は賢《けん》なるか。","yaku":"仲尼（＝孔子）は賢者であるか。"}],"id":"k27"},{"no":28,"g":"疑問","term":"何《ゾ》～［乎］（～：連体形）※「何」は「胡・奚」も用いる","read":"何《なん》ぞ～（する）［や］","mean":"どうして～か。（理由を問う）","ex":[{"kun":"相煎《ルコト》何《ゾ》太《ダ》急《ナル》。","src":"曹植・七歩詩","kaki":"相煎《あひに》ること何《なん》ぞ太《はなは》だ急《きふ》なる。","yaku":"煮立てることがどうして（そんなに）厳しいのか。"}],"id":"k28"},{"no":29,"g":"疑問","term":"何《ヲカ》～（～：連体形）","read":"何《なに》をか～（する）","mean":"何を～か。（事物を問う）","ex":[{"kun":"士《ハ》何《ヲカ》事《トスル》。","src":"孟子","kaki":"士《し》は何《なに》をか事《こと》とする。","yaku":"士は何を努め行えばよいのか。"}],"id":"k29"},{"no":30,"g":"疑問","term":"安《クンゾ》～［乎］（～：連体形）※「安」は「焉・悪」なども用いる","read":"安《いづ》くんぞ～（する）［や］","mean":"どうして～か。","ex":[{"kun":"君安《クンゾ》与〔二〕項伯〔一〕有《ル》〔レ〕故。","src":"史記","kaki":"君《きみ》安《いづ》くんぞ項伯《かうはく》と故《こ》有《あ》る。","yaku":"あなたはどうして項伯と旧交があるのか。"}],"id":"k30"},{"no":31,"g":"疑問","term":"安《クニ［カ］》～［乎］（～：連体形）※「安」は「焉・悪」なども用いる","read":"安《いづ》くに［か］～（する）［や］","mean":"どこに～か。","ex":[{"kun":"沛公安《クニカ》在《ル》。","src":"史記","kaki":"沛公《はいこう》安《いづ》くにか在《あ》る。","yaku":"沛公はどこにいるのか。"}],"id":"k31"},{"no":32,"g":"疑問","term":"誰《カ》・誰《ニカ》・誰《ヲカ》～（～：連体形）※「誰」は「孰」も用いる","read":"誰《たれ》か・誰《たれ》にか・誰《たれ》をか～（する）","mean":"誰が・誰に・誰を～か。","ex":[{"kun":"誰《カ》加《フル》〔レ〕衣《ヲ》者《ゾ》。","src":"韓非子","kaki":"誰《たれ》か衣《ころも》を加《くは》ふる者《もの》ぞ。","yaku":"誰が衣服をかけたのか。"}],"id":"k32"},{"no":33,"g":"疑問","term":"孰《レカ》～（～：連体形）","read":"孰《いづ》れか～（する）","mean":"どちらが～か。","ex":[{"kun":"師《ト》与〔レ〕商也孰《レカ》賢《レル》。","src":"論語","kaki":"師《し》と商《しやう》と孰《いづ》れか賢《まさ》れる。","yaku":"師（＝子張）と商（＝子夏）とではどちらが優れているか。"}],"id":"k33"},{"no":34,"g":"疑問","term":"～何如","read":"～何如《いかん》","mean":"～どのようであるか。","ex":[{"kun":"今日之事、何如。","src":"史記","kaki":"今日《こんにち》の事《こと》、何如《いかん》。","yaku":"今日の（会見の）様子は、どのようであるか。"}],"id":"k34"},{"no":35,"g":"疑問","term":"～如何《［セン］》（若何・奈何）","read":"～如何《いかん》［せん］","mean":"～どうしたらよいか。","ex":[{"kun":"朋友之際《ハ》如何《セン》。","src":"孔子家語","kaki":"朋友《ほういう》の際《さい》は如何《いかん》せん。","yaku":"友達との交際はどうしたらよいか。"}],"id":"k35"},{"no":36,"g":"疑問","term":"何《ヲ》以《テ［カ］》～（～：連体形）","read":"何《なに》を以《もつ》て［か］～（する）","mean":"どうして～か。／どのようにして～か。","ex":[{"kun":"何《ヲ》以《テカ》卑《シム》〔レ〕我《ヲ》。","src":"春秋左氏伝","kaki":"何《なに》を以《もつ》てか我《われ》を卑《いや》しむ。","yaku":"どうして私を軽視するのか。"}],"id":"k36"},{"no":37,"g":"疑問","term":"何為《レゾ》～［乎］（～：連体形）","read":"何為《なんす》れぞ～（する）［や］","mean":"どうして～か。","ex":[{"kun":"君何為《レゾ》哭《スル》。","src":"世説新語","kaki":"君《きみ》何為《なんす》れぞ哭《こく》する。","yaku":"あなたはどうして大声をあげて泣くのか。"}],"id":"k37"},{"no":38,"g":"疑問","term":"幾何《［ゾ］》","read":"幾何《いくばく》［ぞ］","mean":"どれくらいか。（文末にある時は送り仮名に「ゾ」を付ける）","ex":[{"kun":"高《キコト》幾何《ゾ》。","src":"説苑","kaki":"高《たか》きこと幾何《いくばく》ぞ。","yaku":"（空の）高さはどれくらいか。"}],"id":"k38"},{"no":39,"g":"疑問","term":"～《ハ》何《ゾ》也","read":"～は何《なん》ぞや","mean":"～はどうしてか。","ex":[{"kun":"子言《フハ》〔レ〕伐《テト》〔レ〕之《ヲ》、何《ゾ》也。","src":"韓非子","kaki":"子《し》之《これ》を伐《う》てと言《い》ふは、何《なん》ぞや。","yaku":"あなたがこれを討伐せよと言うのは、どうしてか。"}],"id":"k39"},{"no":40,"g":"反語","term":"～《ン》乎（邪・耶・哉・也・与・歟）（～：未然形）","read":"～（せ）んや","mean":"～か、いや～ない。","ex":[{"kun":"以《テ》〔レ〕臣《ヲ》弑《スルハ》〔レ〕君《ヲ》、可《ケン》〔レ〕謂《フ》〔レ〕仁《ト》乎。","src":"史記","kaki":"臣《しん》を以《もつ》て君《きみ》を弑《しい》するは、仁《じん》と謂《い》ふべけんや。","yaku":"臣下の身で君主を殺すのは、仁と言うことができようか、いや言えない。"}],"id":"k40"},{"no":41,"g":"反語","term":"何《ゾ》～《ン》［乎］（～：未然形）※「何」は「胡・奚」も用いる","read":"何《なん》ぞ～（せ）ん［や］","mean":"どうして～か、いや～ない。","ex":[{"kun":"何《ゾ》患《ヘン》〔レ〕無《キヲ》〔レ〕士。","src":"戦国策","kaki":"何《なん》ぞ士《し》無《な》きを患《うれ》へん。","yaku":"どうして賢士がいないことを心配しようか、いや心配しない。"}],"id":"k41"},{"no":42,"g":"反語","term":"何《ヲカ》～《ン》［乎］（～：未然形）","read":"何《なに》をか～（せ）ん［や］","mean":"何を～か、いや何も～ない。","ex":[{"kun":"何《ヲカ》憂《ヘ》何《ヲカ》懼《レン》。","src":"論語","kaki":"何《なに》をか憂《うれ》へ何《なに》をか懼《おそ》れん。","yaku":"何を心配し何を恐れようか、いや何も心配しないし何も恐れない。"}],"id":"k42"},{"no":43,"g":"反語","term":"何《ノ》～《ン》［乎］（～：未然形）","read":"何《なん》の～（せ）ん［や］","mean":"どんな～か、いや～ない。","ex":[{"kun":"我何《ノ》面目《アリテカ》見《エン》〔レ〕之《ニ》。","src":"史記","kaki":"我《われ》何《なん》の面目《めんぼく》ありてか之《これ》に見《まみ》えん。","yaku":"私はどんな顔で彼らと会えばよいのか、いや合わせる顔がない。"}],"id":"k43"},{"no":44,"g":"反語","term":"安《クンゾ》～《ン》［乎］（～：未然形）※「安」は「焉・悪」なども用いる","read":"安《いづ》くんぞ～（せ）ん［や］","mean":"どうして～か、いや～ない。","ex":[{"kun":"安《クンゾ》用《ヰン》〔レ〕重《クスルヲ》〔レ〕法《ヲ》邪。","src":"十八史略","kaki":"安《いづ》くんぞ法《はふ》を重《おも》くするを用《もち》ゐんや。","yaku":"どうして法を厳しくする必要があろうか、いや必要ない。"}],"id":"k44"},{"no":45,"g":"反語","term":"安《クニ［カ］》～《ン》［乎］（～：未然形）※「安」は「焉・悪」なども用いる","read":"安《いづ》くに［か］～（せ）ん［や］","mean":"どこに～か、いやどこにも～ない。","ex":[{"kun":"我安《クニカ》適帰《セン》矣。","src":"史記","kaki":"我《われ》安《いづ》くにか適帰《てきき》せん。","yaku":"私はどこに帰ろうか、いやどこにも帰る所がない。"}],"id":"k45"},{"no":46,"g":"反語","term":"誰《カ》～《ン［ヤ］》（～：未然形）※「誰」は「孰」も用いる","read":"誰《たれ》か～（せ）ん［や］","mean":"誰が～か、いや誰も～ない。","ex":[{"kun":"誰《カ》知《ラン》〔二〕烏《ノ》雌雄《ヲ》〔一〕。","src":"詩経","kaki":"誰《たれ》か烏《からす》の雌雄《しゆう》を知《し》らん。","yaku":"誰が烏の雌雄がわかろうか、いや誰もわからない。"}],"id":"k46"},{"no":47,"g":"反語","term":"如〔二〕～《ヲ》〔一〕何《セン》（若～何・奈～何）","read":"～を如何《いかん》せん","mean":"～をどうすることができようか、いやできない。（目的語は二字の間に挟む）","ex":[{"kun":"虞《ヤ》兮虞《ヤ》兮奈〔レ〕若《ヲ》何《セン》。","src":"史記","kaki":"虞《ぐ》や虞《ぐ》や若《なんぢ》を奈何《いかん》せん。","yaku":"虞よ虞よ、そなたをどうすることができようか、いやできない。"}],"id":"k47"},{"no":48,"g":"反語","term":"如何《ゾ》～《ン［ヤ］》（若何・奈何）（～：未然形）","read":"如何《いかん》ぞ～（せ）ん［や］","mean":"どうして～か、いや～ない。","ex":[{"kun":"如何《ゾ》不《ラン》〔二〕涙垂《レ》〔一〕。","src":"白居易・長恨歌","kaki":"如何《いかん》ぞ涙《なみだ》垂《た》れざらん。","yaku":"どうして涙が流れないだろうか、いや流れる。"}],"id":"k48"},{"no":49,"g":"反語","term":"何《ヲ》以《テ［カ］》～《ン》［乎］（～：未然形）","read":"何《なに》を以《もつ》て［か］～（せ）ん［や］","mean":"どうして～か、いや～ない。","ex":[{"kun":"不《ンバ》〔レ〕然《ラ》、籍何《ヲ》以《テ》至《ラン》〔レ〕此《ニ》。","src":"史記","kaki":"然《しか》らずんば、籍《せき》何《なに》を以《もつ》て此《ここ》に至《いた》らん。","yaku":"そうでなければ、籍（＝私）はどうしてこのようなことをするだろうか、いやしない。"}],"id":"k49"},{"no":50,"g":"反語","term":"何為《レゾ》～《ン［ヤ］》（～：未然形）","read":"何為《なんす》れぞ～（せ）ん［や］","mean":"どうして～か、いや～ない。","ex":[{"kun":"何為《レゾ》寸歩《モ》出《デテ》〔レ〕門《ヲ》行《カンヤ》。","src":"菅原道真・不出門","kaki":"何為《なんす》れぞ寸歩《すんぽ》も門《もん》を出《い》でて行《ゆ》かんや。","yaku":"どうして一歩も門を出て行こうか、いや一歩も出ない。"}],"id":"k50"},{"no":51,"g":"反語","term":"豈《ニ》～《ン》乎（～：未然形）","read":"豈《あ》に～（せ）んや","mean":"どうして～か、いや～ない。","ex":[{"kun":"豈《ニ》遠《シトセン》〔二〕千里《ヲ》〔一〕哉。","src":"史記","kaki":"豈《あ》に千里《せんり》を遠《とほ》しとせんや。","yaku":"どうして千里の道のりを遠いと思うだろうか、いや思わない。"}],"id":"k51"},{"no":52,"g":"反語","term":"敢《ヘテ》不《ラン》〔二〕～〔一〕［乎］（～：未然形）","read":"敢《あ》へて～（せ）ざらん［や］","mean":"どうして～しないだろうか、いやきっと～する。","ex":[{"kun":"百獣之見《テ》〔レ〕我《ヲ》而敢《ヘテ》不《ラン》〔レ〕走《ゲ》乎。","src":"戦国策","kaki":"百獣《ひやくじう》の我《われ》を見《み》て、敢《あ》へて走《に》げざらんや。","yaku":"多くの獣たちは私を見て、どうして逃げないだろうか、いやきっと逃げる。"}],"id":"k52"},{"no":53,"g":"反語","term":"何《ノ》～《カ》之《レ》有《ラン》（～：体言）","read":"何《なん》の～か之《こ》れ有《あ》らん","mean":"どうして～があろうか、いや～はない。（「之」は指示語ではなく倒置の用法）","ex":[{"kun":"何《ノ》常師《カ》之《レ》有《ラン》。","src":"論語","kaki":"何《なん》の常師《じやうし》か之《こ》れ有《あ》らん。","yaku":"どうして決まった先生がいようか、いや決まった先生はいない。"}],"id":"k53"},{"no":54,"g":"反語","term":"独《リ》～《ン》乎（～：未然形）","read":"独《ひと》り～（せ）んや","mean":"どうして～か、いや～ない。","ex":[{"kun":"独《リ》畏《レン》〔二〕廉将軍《ヲ》〔一〕哉。","src":"史記","kaki":"独《ひと》り廉将軍《れんしやうぐん》を畏《おそ》れんや。","yaku":"どうして廉将軍を恐れようか、いや恐れはしない。"}],"id":"k54"},{"no":55,"g":"疑問","term":"何《ゾ》不《ル》〔二〕～〔一〕（～：未然形）","read":"何《なん》ぞ～（せ）ざる","mean":"どうして～しないのか、～すればよい。","ex":[{"kun":"何《ゾ》不《ル》〔二〕試《ミルニ》〔レ〕之《ヲ》以《テセ》〔一レ〕足《ヲ》。","src":"韓非子","kaki":"何《なん》ぞ之《これ》を試《こころ》みるに足《あし》を以《もつ》てせざる。","yaku":"どうしてこれ（＝靴）を試すのに足でしないのか、試せばよい。"}],"id":"k55"},{"no":56,"g":"詠嘆","term":"嗚呼（嗟乎・噫）※「嗟夫」「于嗟」「嘻」なども用いる","read":"嗚呼《ああ》","mean":"ああ","ex":[{"kun":"嗚呼、其《レ》真《ニ》無《キ》〔レ〕馬邪。","src":"韓愈・雑説","kaki":"嗚呼《ああ》、其《そ》れ真《しん》に馬《うま》無《な》きか。","yaku":"ああ、本当に名馬はいないのか。"}],"id":"k56"},{"no":57,"g":"詠嘆","term":"～哉（夫・乎・矣）※「也」「与」「矣乎」「矣哉」なども用いる","read":"～かな","mean":"～だなあ。","ex":[{"kun":"呉王曰《ハク》、「善《キ》哉。」","src":"説苑","kaki":"呉王《ごわう》曰《い》はく、「善《よ》きかな。」と。","yaku":"呉王は言った、「よいことだなあ。」と。"}],"id":"k57"},{"no":58,"g":"詠嘆","term":"不〔二〕亦～〔一〕乎（～：未然形）","read":"亦《また》～（なら）ずや","mean":"なんと～ではないか。","ex":[{"kun":"不〔二〕亦楽《シカラ》〔一〕乎。","src":"論語","kaki":"亦《また》楽《たの》しからずや。","yaku":"なんと楽しいではないか。"}],"id":"k58"},{"no":59,"g":"詠嘆","term":"豈《ニ》不〔二〕～〔一〕哉（～：未然形）※「不」が「非」となる場合もある：豈《ニ》非《ズ》〔二〕～《ニ》〔一〕哉（豈《あ》に～に非《あら》ずや）","read":"豈《あ》に～（なら）ずや","mean":"なんと～ではないか。","ex":[{"kun":"豈《ニ》不〔二〕誠《ノ》大丈夫《ナラ》〔一〕哉。","src":"孟子","kaki":"豈《あ》に誠《まこと》の大丈夫《だいぢやうふ》ならずや。","yaku":"なんと本当の立派な男ではないか。"},{"kun":"豈《ニ》非《ズ》〔レ〕天《ニ》哉。","src":"蒙求","kaki":"豈《あ》に天《てん》に非《あら》ずや。","yaku":"なんと天運ではないか。"}],"id":"k59"},{"no":60,"g":"詠嘆","term":"何《ゾ》［其《レ》］～也（～：連体形）","read":"何《なん》ぞ［其《そ》れ］～（する）や","mean":"なんとまあ～ことよ。（「其」は指示語ではなく強調の用法。特に訳さなくてよい）","ex":[{"kun":"何《ゾ》楚人之多《キ》也。","src":"史記","kaki":"何《なん》ぞ楚人《そひと》の多《おほ》きや。","yaku":"なんとまあ楚の国の人が多いことよ。"}],"id":"k60"},{"no":61,"g":"使役","term":"使《ム》〔二〕A《ヲシテ》B〔一〕（令・遣・教）（B：未然形）※Aの部分がない場合もある","read":"Aをして B（せ）しむ","mean":"AにBさせる。","ex":[{"kun":"使《ム》〔二〕子路《ヲシテ》問《ハ》〔一レ〕之《ヲ》。","src":"礼記","kaki":"子路《しろ》をして之《これ》を問《と》はしむ。","yaku":"子路（＝孔子の弟子の名）にこれを尋ねさせた。"},{"kun":"令《ム》〔二〕騎《ヲシテ》皆下《リテ》〔レ〕馬《ヲ》歩行《セ》〔一〕。","src":"史記","kaki":"騎《き》をして皆《みな》馬《うま》を下《お》りて歩行《ほかう》せしむ。","yaku":"騎兵に皆馬を下りて歩かせた。"}],"id":"k61"},{"no":62,"g":"使役","term":"命《ジテ》〔レ〕A《ニ》B《シム》（B：未然形）","read":"Aに命《めい》じてB（せ）しむ","mean":"Aに命じてBさせる。（動詞Bの送り仮名に使役の「シム」を付け加える）","ex":[{"kun":"命《ジテ》〔二〕故人《ニ》〔一〕書《セシム》〔レ〕之《ヲ》。","src":"陶潜・飲酒","kaki":"故人《こじん》に命《めい》じて之《これ》を書《しよ》せしむ。","yaku":"友人に命じてこれを書かせる。"}],"id":"k62"},{"no":63,"g":"使役","term":"遣《ハシテ》〔レ〕A《ヲ》B《シム》（B：未然形）","read":"Aを遣《つか》はしてB（せ）しむ","mean":"Aを派遣してBさせる。（派遣の意味が強い時は「遣はす」と動詞として読む）","ex":[{"kun":"大王遣《ハシテ》〔二〕一介之使《ヒヲ》〔一〕至《ラシム》〔レ〕趙《ニ》。","src":"史記","kaki":"大王《だいわう》一介《いつかい》の使《つか》ひを遣《つか》はして趙《てう》に至《いた》らしむ。","yaku":"大王はつまらない使者を派遣して趙に来させた。"}],"id":"k63"},{"no":64,"g":"受身","term":"見《ル・ラル》〔二〕～〔一〕（被）（～：未然形）※「為」「所」を用いる場合もあるが、まれ","read":"～（せ）る／～（せ）らる","mean":"～される。","ex":[{"kun":"信《ナレドモ》而見《レ》〔レ〕疑《ハ》、忠《ナレドモ》而被《ル》〔レ〕謗《ラ》。","src":"史記","kaki":"信《しん》なれども疑《うたが》はれ、忠《ちゆう》なれども謗《そし》らる。","yaku":"真心を尽くしているのに疑われ、忠義を尽くしているのに悪く言われる。"}],"id":"k64"},{"no":65,"g":"受身","term":"見《ル・ラル》〔レ〕B〔二〕於A《ニ》〔一〕（被）（於＝于・乎）（B：未然形）","read":"AにB（せ）る／AにB（せ）らる","mean":"AにBされる。","ex":[{"kun":"見《ル》〔レ〕愛《セ》〔二〕於衛君《ニ》〔一〕。","src":"史記","kaki":"衛君《ゑいくん》に愛《あい》せらる。","yaku":"衛の君主に寵愛される。"}],"id":"k65"},{"no":66,"g":"受身","term":"B《ル・ラル》〔二〕於A《ニ》〔一〕（於＝于・乎）（B：未然形）","read":"AにB（せ）る／AにB（せ）らる","mean":"AにBされる。","ex":[{"kun":"以《テ》〔二〕節倹力行《ヲ》〔一〕重《ンゼラル》〔二〕於斉《ニ》〔一〕。","src":"史記","kaki":"節倹力行《せつけんりきかう》を以《もつ》て斉《せい》に重《おも》んぜらる。","yaku":"節約し努力することで斉国で重用された。"}],"id":"k66"},{"no":67,"g":"受身","term":"為《ル》〔二〕A《ノ》所《ト》〔一レ〕B（B：連体形）※Aが省略される形もある：為《ル》〔レ〕所《ト》〔レ〕B（B（する）所《ところ》と為《な》る）","read":"AのB（する）所《ところ》と為《な》る","mean":"AにBされる。（「る・らる」がないので気づきにくいが、受身の重要な表現）","ex":[{"kun":"為《ル》〔二〕楚相《ノ》所《ト》〔一レ〕辱《ムル》。","src":"十八史略","kaki":"楚《そ》の相《しやう》の辱《はづかし》むる所《ところ》と為《な》る。","yaku":"楚国の大臣に恥をかかされた。"}],"id":"k67"},{"no":68,"g":"限定・累加","term":"唯《ダ》～《ノミ》（惟・但・只・徒・直）※「特・啻・第・祇」も用いる","read":"唯《た》だ～のみ","mean":"ただ～だけだ。（「のみ」の前が用言の場合は連体形）","ex":[{"kun":"唯《ダ》恐《ルルノミ》〔二〕沛公《ノ》不《ランコトヲ》〔一レ〕為《ラ》〔二〕秦王《ト》〔一〕。","src":"史記","kaki":"唯《た》だ沛公《はいこう》の秦王《しんわう》と為《な》らざらんことを恐《おそ》るるのみ。","yaku":"ただ沛公が秦王（のよう）にならないことを心配するだけだ。"}],"id":"k68"},{"no":69,"g":"限定・累加","term":"独《リ》～《ノミ》","read":"独《ひと》り～のみ","mean":"ただ～だけだ。","ex":[{"kun":"今独《リ》臣《ノミ》有《リ》〔レ〕船。","src":"史記","kaki":"今《いま》独《ひと》り臣《しん》のみ船《ふね》有《あ》り。","yaku":"今ただ私だけが船を持っている。"}],"id":"k69"},{"no":70,"g":"限定・累加","term":"～耳（爾・已・而已・而已矣）","read":"～のみ","mean":"～だけだ。・～のだ。（「而已矣」は3字で「のみ」と読む）","ex":[{"kun":"此《レ》亡秦之続耳。","src":"史記","kaki":"此《こ》れ亡秦《ばうしん》の続《ぞく》のみ。","yaku":"これは亡んだ秦の二の舞いとなるだけだ。"},{"kun":"夫子《ノ》道《ハ》、忠恕而已矣。","src":"論語","kaki":"夫子《ふうし》の道《みち》は、忠恕《ちゆうじよ》のみ。","yaku":"先生の生き方は、誠実と寛容ということだけだ。"}],"id":"k70"},{"no":71,"g":"限定・累加","term":"唯《ダ》～耳 ※「唯」は「惟・但・只・徒・直」を用いる場合もある","read":"唯《た》だ～のみ","mean":"ただ～だけだ。・～のだ。","ex":[{"kun":"唯《ダ》使君《ト》与〔レ〕操耳。","src":"三国志","kaki":"唯《た》だ使君《しくん》と操《さう》とのみ。","yaku":"ただ長官と操（＝私）だけだ。"}],"id":"k71"},{"no":72,"g":"限定・累加","term":"独《リ》～耳","read":"独《ひと》り～のみ","mean":"ただ～だけだ。・～のだ。","ex":[{"kun":"独《リ》其《ノ》言在《ル》耳。","src":"史記","kaki":"独《ひと》り其《そ》の言《げん》在《あ》るのみ。","yaku":"ただその言葉が残っているだけだ。"}],"id":"k72"},{"no":73,"g":"限定・累加","term":"不〔二〕唯《ダニ》～《ノミナラ》〔一〕（唯＝独《リ》）※「唯」は「惟・但・只・徒・直」を用いる場合もある","read":"唯《た》だに（独《ひと》り）～のみならず","mean":"ただ～だけではない。（「唯ダニ」と「ニ」を送ることに注意）","ex":[{"kun":"不〔二〕唯《ダニ》忘《ルルノミナラ》〔一レ〕帰《ルヲ》、可《シ》〔二〕以《テ》終《フ》〔一レ〕老《ヲ》。","src":"白居易・与微之書","kaki":"唯《た》だに帰《かへ》るを忘《わす》るるのみならず、以《もつ》て老《らう》を終《を》ふべし。","yaku":"ただ帰るのを忘れるだけではなく、（ここで）晩年を過ごしてもよい。"},{"kun":"不〔二〕独《リ》漢朝《ノミナラ》〔一〕今《モ》亦有《リ》。","src":"白居易・塩商婦","kaki":"独《ひと》り漢朝《かんてう》のみならず今《いま》も亦《ま》た有《あ》り。","yaku":"ただ漢王朝だけではなく今も同じくいる。"}],"id":"k73"},{"no":74,"g":"限定・累加","term":"非《ズ》〔二〕唯《ダニ》～《ノミニ》〔一〕（唯＝独《リ》）","read":"唯《た》だに（独《ひと》り）～のみに非《あら》ず","mean":"ただ～だけではない。","ex":[{"kun":"非《ズ》〔二〕唯《ダニ》有《ルノミニ》〔一レ〕智。","src":"世説新語","kaki":"唯《た》だに智《ち》有《あ》るのみに非《あら》ず。","yaku":"ただ智恵があるだけではない。"},{"kun":"非《ザル》〔二〕独《リ》羊《ノミニ》〔一〕也。治《ムルモ》〔レ〕民《ヲ》亦猶《ホ》〔キ〕〔レ〕是《クノ》也。","src":"史記","kaki":"独《ひと》り羊《ひつじ》のみに非《あら》ざるなり。民《たみ》を治《をさ》むるも亦《また》猶《な》ほ是《か》くのごときなり。","yaku":"ただ羊だけではないのである。民を治める場合もまた同じなのである。"}],"id":"k74"},{"no":75,"g":"限定・累加","term":"豈《ニ》唯《ダニ》～《ノミナランヤ》（唯＝独《リ》）","read":"豈《あ》に唯《た》だに（独《ひと》り）～のみならんや","mean":"どうしてただ～だけであろうか、いや～だけではない。","ex":[{"kun":"豈《ニ》惟《ダニ》怠《ルノミナランヤ》〔レ〕之《ヲ》、又従《ヒテ》而盗《ム》〔レ〕之《ヲ》。","src":"柳宗元・送薛存義序","kaki":"豈《あ》に惟《た》だに之《これ》を怠《おこた》るのみならんや、又《また》従《したが》ひて之《これ》を盗《ぬす》む。","yaku":"どうしてただこれ（＝仕事）を怠るだけであろうか、いやそれだけではなく、その上盗みをも働くのだ。"}],"id":"k75"},{"no":76,"g":"限定・累加","term":"何《ゾ》独《リ》～《ノミナランヤ》","read":"何《なん》ぞ独《ひと》り～のみならんや","mean":"どうしてただ～だけであろうか、いや～だけではない。","ex":[{"kun":"故郷何《ゾ》独《リ》在《ルノミナランヤ》〔二〕長安《ニ》〔一〕。","src":"白居易・香炉峰下、新卜山居草堂初成、偶題東壁","kaki":"故郷《こきやう》何《なん》ぞ独《ひと》り長安《ちやうあん》に在《あ》るのみならんや。","yaku":"故郷はどうしてただ長安だけであろうか、いや長安だけではない。"}],"id":"k76"},{"no":77,"g":"比較・選択","term":"A《ハ》C《［ナリ］》〔二〕於B《ヨリ［モ］》〔一〕（於＝于・乎）","read":"AはBより［も］C［なり］","mean":"AはBよりもCである。（Cには形容詞・形容動詞がくる）","ex":[{"kun":"霜葉《ハ》紅《ナリ》〔二〕於二月《ノ》花《ヨリモ》〔一〕。","src":"杜牧・山行","kaki":"霜葉《さうえふ》は二月《にぐわつ》の花《はな》よりも紅《くれなゐ》なり。","yaku":"霜にうたれて色づいた葉は二月の花よりも赤い。"}],"id":"k77"},{"no":78,"g":"比較・選択","term":"B《ハ》不〔レ〕如《カ》〔二〕A《ニ》〔一〕（如＝若）","read":"BはAに如《し》かず","mean":"BはAに及ばない。／BよりもAの方がよい。","ex":[{"kun":"百聞《ハ》不〔レ〕如《カ》〔二〕一見《ニ》〔一〕。","src":"漢書","kaki":"百聞《ひやくぶん》は一見《いつけん》に如《し》かず。","yaku":"何度も人に聞くことは一度自分の目で確かめることに及ばない。"}],"id":"k78"},{"no":79,"g":"比較・選択","term":"莫《シ》〔レ〕如《クハ》〔二〕A《ニ》〔一〕（如＝若）","read":"Aに如《し》くは莫《な》し","mean":"Aに及ぶものはない。／Aがいちばんだ。","ex":[{"kun":"知《ルハ》〔レ〕臣《ヲ》莫《シ》〔レ〕如《クハ》〔レ〕君《ニ》。","src":"史記","kaki":"臣《しん》を知《し》るは君《きみ》に如《し》くは莫《な》し。","yaku":"臣下を知ることについては君主に及ぶものはない。"}],"id":"k79"},{"no":80,"g":"比較・選択","term":"寧《ロ》A《トモ》無《カレ》〔レ〕B《［コト］》（A：終止形、B：連体形）","read":"寧《むし》ろA（す）とも B（する）［こと］無《な》かれ","mean":"AしてもBするな。","ex":[{"kun":"寧《ロ》為《ルトモ》〔二〕鶏口《ト》〔一〕、無《カレ》〔レ〕為《ルコト》〔二〕牛後《ト》〔一〕。","src":"十八史略","kaki":"寧《むし》ろ鶏口《けいこう》と為《な》るとも、牛後《ぎうご》と為《な》ること無《な》かれ。","yaku":"鶏の口にはなっても、牛の尻にはなるな。"}],"id":"k80"},{"no":81,"g":"比較・選択","term":"与《リハ》〔二〕其《ノ》B《ン》〔一〕、寧《ロ》A／不〔レ〕如《カ》〔二〕A《ニ》〔一〕／孰〔二〕‐与《レゾ》A《ニ》〔一〕（如＝若、孰与＝孰若）（B：未然形、「寧」の後のA：命令形、他のA：連体形）","read":"其《そ》のB（せ）んよりは 寧《むし》ろA（せよ）／A（する）に如《し》かず／A（する）に孰与《いづ》れぞ","mean":"BするよりはAする方がよい。（「其」は語調を整える語で訳さなくてよい。「与リ」は書き下し文ではひらがなで書く）","ex":[{"kun":"礼《ハ》与《リハ》〔二〕其《ノ》奢《ラン》〔一〕也、寧《ロ》倹《セヨ》。","src":"論語","kaki":"礼《れい》は其《そ》の奢《おご》らんよりは、寧《むし》ろ倹《けん》せよ。","yaku":"儀式はぜいたくにするよりは、質素な方がよい。"},{"kun":"与《リハ》〔二〕其《ノ》有《ラン》〔一レ〕誉《レ》〔二〕於前《ニ》〔一〕、孰〔二〕‐若《レゾ》無《キニ》〔一レ〕毀《リ》〔二〕於其《ノ》後《ニ》〔一〕。","src":"韓愈・送李愿帰盤谷序","kaki":"其《そ》の前《まへ》に誉《ほま》れ有《あ》らんよりは、其《そ》の後《あと》に毀《そし》り無《な》きに孰若《いづ》れぞ。","yaku":"目の前で誉められるよりは、背後でそしられない方がよい。"}],"id":"k81"},{"no":82,"g":"仮定","term":"如《シ》～《バ》（若）（～：未然形・已然形）","read":"如《も》し～（せ・すれ）ば","mean":"もしも～ならば（否定の語が条件になる場合は「ずンバ」「ざレバ」の二通りの読み方がある）","ex":[{"kun":"如《シ》詩不《ンバ》〔レ〕成《ラ》、罰《ハ》依《ラン》〔二〕金谷《ノ》酒数《ニ》〔一〕。","src":"李白・春夜宴桃李園序","kaki":"如《も》し詩《し》成《な》らずんば、罰《ばつ》は金谷《きんこく》の酒数《しゆすう》に依《よ》らん。","yaku":"もしも詩ができなかったならば、罰の酒は金谷の故事にならって飲ませよう。"}],"id":"k82"},{"no":83,"g":"仮定","term":"苟《クモ》～《バ》（～：未然形・已然形）","read":"苟《いやし》くも～（せ・すれ）ば","mean":"もしも～ならば","ex":[{"kun":"苟《クモ》有《ラバ》〔二〕用《フル》〔レ〕我《ヲ》者〔一〕、期月而已《ニシテ》可也。","src":"論語","kaki":"苟《いやし》くも我《われ》を用《もち》ふる者《もの》有《あ》らば、期月《きげつ》のみにして可《か》なり。","yaku":"もしも私を登用する者がいるならば、一年だけでもよいのだ。"}],"id":"k83"},{"no":84,"g":"仮定","term":"縦《ヒ》～《トモ》（～：終止形）","read":"縦《たと》ひ～（す）とも","mean":"たとえ～としても","ex":[{"kun":"縦《ヒ》有《リトモ》〔三〕健婦《ノ》把《ル》〔二〕鋤犂《ヲ》〔一〕、禾《ハ》生《ジテ》〔二〕隴畝《ニ》〔一〕無《シ》〔二〕東西〔一〕。","src":"杜甫・兵車行","kaki":"縦《たと》ひ健婦《けんぷ》の鋤犂《じより》を把《と》る有《あ》りとも、禾《くわ》は隴畝《ろうほ》に生《しやう》じて東西《とうざい》無《な》し。","yaku":"たとえけなげな婦人が鋤を手にし（て耕し）たとしても、穀物が田畑の畝に生えて乱れている。"}],"id":"k84"},{"no":85,"g":"仮定","term":"雖《モ》〔二〕～《ト》〔一〕（～：終止形）","read":"～（す）と雖《いへど》も","mean":"たとえ～としても（「～ではあるが」という逆接確定条件を表すこともある）","ex":[{"kun":"其《ノ》身不《レバ》〔レ〕正《シカラ》、雖《モ》〔レ〕令《スト》不〔レ〕従《ハレ》。","src":"論語","kaki":"其《そ》の身《み》正《ただ》しからざれば、令《れい》すと雖《いへど》も従《したが》はれず。","yaku":"自身が正しくなかったならば、たとえ命令したとしても（人民には）従われない。"}],"id":"k85"},{"no":86,"g":"仮定","term":"使《メバ》〔二〕A《ヲシテ》B〔一〕（B：未然形）","read":"AをしてB（せ）しめば","mean":"もしAがBしたならば","ex":[{"kun":"使《メバ》〔三〕六国《ヲシテ》各愛《セ》〔二〕其《ノ》人《ヲ》〔一〕、則《チ》足《ル》〔二〕以《テ》拒《グニ》〔一レ〕秦《ヲ》。","src":"杜牧・阿房宮賦","kaki":"六国《りつこく》をして各《おのおの》其《そ》の人《ひと》を愛《あい》せしめば、則《すなは》ち以《もつ》て秦《しん》を拒《ふせ》ぐに足《た》る。","yaku":"もし六国の諸侯たちがそれぞれ自国の人民を大切にしたならば、秦の侵略を防ぐことができた。"}],"id":"k86"},{"no":87,"g":"抑揚","term":"A《スラ》且《ツ》（尚《ホ》・猶《ホ》）B。［而《ルヲ》］況《ンヤ》C《ヲ》乎／況《ンヤ》於《イテヲ》〔レ〕C《ニ》乎","read":"Aすら且《か》つ（尚《な》ほ）B。［而《しか》るを］況《いは》んやCをや／況《いは》んやCに於《お》いてをや","mean":"AでさえBだ。ましてCはなおさらBだ。（「且ツ」「尚ホ」の直前の送り仮名は「スラ」。後半に「安クンゾC（セ）ン乎」などの反語形を用いることもある）","ex":[{"kun":"死馬《スラ》且《ツ》買《フ》〔レ〕之《ヲ》、況《ンヤ》生《ケル》者《ヲ》乎。","src":"十八史略","kaki":"死馬《しば》すら且《か》つ之《これ》を買《か》ふ、況《いは》んや生《い》ける者《もの》をや。","yaku":"死んだ馬（の骨）でさえ高く買う、まして生きた馬ならなおさら高く買う。"},{"kun":"庸人《スラ》尚《ホ》羞《ヅ》〔レ〕之《ヲ》。況《ンヤ》於《イテヲ》〔二〕将相《ニ》〔一〕乎。","src":"史記","kaki":"庸人《ようじん》すら尚《な》ほ之《これ》を羞《は》づ。況《いは》んや将相《しやうしやう》に於《お》いてをや。","yaku":"凡人でさえこれを恥じる。まして将軍や大臣はなおさら恥じる。"},{"kun":"臣死《スラ》且《ツ》不〔レ〕避《ケ》。卮酒安《クンゾ》足《ランヤ》〔レ〕辞《スルニ》。","src":"史記","kaki":"臣《しん》死《し》すら且《か》つ避《さ》けず。卮酒《ししゆ》安《いづ》くんぞ辞《じ》するに足《た》らんや。","yaku":"私は死ぬことでさえ避けない。まして大杯の酒などどうして辞退するに値するだろうか、いや辞退するに値しない。"}],"id":"k87"},{"no":88,"g":"願望","term":"請《フ》～《ン》（～：未然形）／請《フ》～（～：命令形）","read":"請《こ》ふ～（せ）ん／請《こ》ふ～（せよ）","mean":"どうか～させてください。／どうか～してください。","ex":[{"kun":"王好《ム》〔レ〕戦《ヒヲ》。請《フ》以《テ》〔レ〕戦《ヒヲ》喩《ヘン》。","src":"孟子","kaki":"王《わう》戦《たたか》ひを好《この》む。請《こ》ふ戦《たたか》ひを以《もつ》て喩《たと》へん。","yaku":"王は戦争を好みます。どうか戦争でたとえさせてください。"},{"kun":"請《フ》勿《カレ》〔二〕復《タ》敢《ヘテ》見《ル》〔一〕矣。","src":"孟子","kaki":"請《こ》ふ復《ま》た敢《あ》へて見《み》る勿《な》かれ。","yaku":"どうかもう会おうとしないでください。"}],"id":"k88"},{"no":89,"g":"願望","term":"願《ハクハ》～《ン》（～：未然形）／願《ハクハ》～（～：命令形）","read":"願《ねが》はくは～（せ）ん／願《ねが》はくは～（せよ）","mean":"どうか～させてください。／どうか～してください。","ex":[{"kun":"願《ハクハ》得《ン》〔二〕君《ノ》狐白裘《ヲ》〔一〕。","src":"十八史略","kaki":"願《ねが》はくは君《きみ》の狐白裘《こはくきう》を得《え》ん。","yaku":"どうかあなたの狐の白い毛皮でできた衣を手に入れさせてください。"},{"kun":"願《ハクハ》大王急《ギ》渡《レ》。","src":"史記","kaki":"願《ねが》はくは大王《だいわう》急《いそ》ぎ渡《わた》れ。","yaku":"どうか大王様、急いで渡ってください。"}],"id":"k89"},{"no":90,"g":"願望","term":"欲《ス》〔二〕～《ント》〔一〕（～：未然形）※「欲」は「～しそうだ」（状態）の用法もある","read":"～（せ）んと欲《ほつ》す","mean":"～したいと思う。／～しようとする。","ex":[{"kun":"工欲《ス》〔レ〕善《クセント》〔二〕其《ノ》事《ヲ》〔一〕。","src":"論語","kaki":"工《たくみ》其《そ》の事《こと》を善《よ》くせんと欲《ほつ》す。","yaku":"職人が自分の仕事を立派にしたいと思う。"}],"id":"k90"}]},{"id":"s","name":"漢文成句","short":"成句","badge":"成","unit":"項目","desc":"疑問・反語・再読文字・比較などの句法を読みと意味で確認","groups":["No.1–30","No.31–60","No.61–90","No.91–122"],"items":[{"no":1,"term":"～夫","read":"疑問：～か、～や/反語：～んや","mean":"疑問：～か/反語：～か、いや～ない","g":"No.1–30","id":"s1"},{"no":2,"term":"～幾何","read":"疑問：～いくばく/反語：～いくばく","mean":"疑問：～はどれくらいか/反語：～はどれくらいか、いや～いくらもない","g":"No.1–30","id":"s2"},{"no":3,"term":"～乎","read":"疑問：～か、～や/反語：～んや","mean":"疑問：～か/反語：～か、いや～ない","g":"No.1–30","id":"s3"},{"no":4,"term":"～邪","read":"疑問：～か、～や/反語：～んや","mean":"疑問：～か/反語：～か、いや～ない","g":"No.1–30","id":"s4"},{"no":5,"term":"～也","read":"疑問：～か、～や/反語：～んや","mean":"疑問：～か/反語：～か、いや～ない","g":"No.1–30","id":"s5"},{"no":6,"term":"～ば","read":"～ば","mean":"もし～ならば","g":"No.1–30","id":"s6"},{"no":7,"term":"～未","read":"～やいまだしや","mean":"～か、まだだろうか","g":"No.1–30","id":"s7"},{"no":8,"term":"～哉","read":"疑問：～か、～や/反語：～んや","mean":"疑問：～か/反語：～か、いや～ない","g":"No.1–30","id":"s8"},{"no":9,"term":"～与","read":"疑問：～か、～や/反語：～んや","mean":"疑問：～か/反語：～か、いや～ない","g":"No.1–30","id":"s9"},{"no":10,"term":"～歟","read":"～かな","mean":"～だなあ","g":"No.1–30","id":"s10"},{"no":11,"term":"～矣","read":"～かな","mean":"～だなあ","g":"No.1–30","id":"s11"},{"no":12,"term":"AB。況C乎。","read":"AはB。いはんやCをや。","mean":"AはBである。ましてCはなおさらBである。","g":"No.1–30","id":"s12"},{"no":13,"term":"AB于C","read":"AはCよりもB","mean":"AがCよりもBである","g":"No.1–30","id":"s13"},{"no":14,"term":"AB乎C","read":"AはCよりもB","mean":"AがCよりもBである","g":"No.1–30","id":"s14"},{"no":15,"term":"AB於C","read":"AはCよりもB","mean":"AがCよりもBである","g":"No.1–30","id":"s15"},{"no":16,"term":"A孰－与B","read":"AはBにいづれぞ","mean":"AとBはどちらがよいか","g":"No.1–30","id":"s16"},{"no":17,"term":"A於B","read":"BにAる/BにAらる","mean":"BにAされる","g":"No.1–30","id":"s17"},{"no":18,"term":"A且B。安C乎。","read":"AすらかつB。いづくんぞCんや。","mean":"AさえもBである。ましてどうしてCしようか、いや、しない。","g":"No.1–30","id":"s18"},{"no":19,"term":"A且B。況C乎。","read":"AすらかつB。いはんやCをや。","mean":"AさえもBである。ましてCはなおさらBである。","g":"No.1–30","id":"s19"},{"no":20,"term":"A則B","read":"AばすなはちB","mean":"AならばBである","g":"No.1–30","id":"s20"},{"no":21,"term":"A不如B","read":"AはBにしかず","mean":"AはBに及ばない/AよりもBのほうがよい","g":"No.1–30","id":"s21"},{"no":22,"term":"A不若B","read":"AはBにしかず","mean":"AはBに及ばない/AよりもBのほうがよい","g":"No.1–30","id":"s22"},{"no":23,"term":"A無若B","read":"AはBにしくはなし","mean":"Aに関してはBにまさるものはない","g":"No.1–30","id":"s23"},{"no":24,"term":"嗚呼","read":"ああ～","mean":"ああ～","g":"No.1–30","id":"s24"},{"no":25,"term":"嗟","read":"ああ～","mean":"ああ～","g":"No.1–30","id":"s25"},{"no":26,"term":"噫","read":"ああ～","mean":"ああ～","g":"No.1–30","id":"s26"},{"no":27,"term":"嗟乎","read":"ああ～","mean":"ああ～","g":"No.1–30","id":"s27"},{"no":28,"term":"悪クンゾ～","read":"疑問：いづくんぞ～/反語：いづくんぞ～ん","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.1–30","id":"s28"},{"no":29,"term":"豈～","read":"あに～ん","mean":"どうして～か、いや～ない","g":"No.1–30","id":"s29"},{"no":30,"term":"豈惟～","read":"あにただに～のみならんや","mean":"どうしてただ～だけだろうか、いや、～だけではない。","g":"No.1–30","id":"s30"},{"no":31,"term":"豈不～哉","read":"あに～ずや","mean":"なんと～ではないか","g":"No.31–60","id":"s31"},{"no":32,"term":"敢不～","read":"あへて～ざらん","mean":"どうして～ないだろうか、いや～する","g":"No.31–60","id":"s32"},{"no":33,"term":"安クニカ～","read":"疑問：いづくにか～/反語：いづくにか～ん","mean":"疑問：どこに～か/反語：どこに～か、いや～ない","g":"No.31–60","id":"s33"},{"no":34,"term":"安クンゾ～","read":"疑問：いづくんぞ～/反語：いづくんぞ～ん","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.31–60","id":"s34"},{"no":35,"term":"雖～","read":"～といへども","mean":"たとえ～としても","g":"No.31–60","id":"s35"},{"no":36,"term":"幾～","read":"疑問：いく～/反語：いく～","mean":"疑問：どれくらいの～か/反語：どれくらいの～か、いや～いくらもない","g":"No.31–60","id":"s36"},{"no":37,"term":"応～","read":"まさに～べし","mean":"当然～すべきである/きっと～だろう","g":"No.31–60","id":"s37"},{"no":38,"term":"教ABC","read":"AにおしえてCをBしむ","mean":"Aに教え命じてCをBさせる","g":"No.31–60","id":"s38"},{"no":39,"term":"且～","read":"まさに～んとす","mean":"いまにも～しようとする","g":"No.31–60","id":"s39"},{"no":40,"term":"盍～","read":"なんぞ～ざる","mean":"どうして～しないのか","g":"No.31–60","id":"s40"},{"no":41,"term":"胡～乎","read":"疑問：なんぞ～や/反語：なんぞ～んや","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.31–60","id":"s41"},{"no":42,"term":"使ABC","read":"AをしてCをBしむ","mean":"AにCをBさせる","g":"No.31–60","id":"s42"},{"no":43,"term":"如～","read":"もし～ば","mean":"もし～ならば","g":"No.31–60","id":"s43"},{"no":44,"term":"如～何","read":"疑問：～いかんせん/反語：～いかんせん","mean":"疑問：～をどうしようか/反語：～をどうしようか、いや～どうすることもできない","g":"No.31–60","id":"s44"},{"no":45,"term":"将～","read":"まさに～んとす","mean":"いまにも～しようとする","g":"No.31–60","id":"s45"},{"no":46,"term":"須～","read":"すべからく～べし","mean":"～する必要がある","g":"No.31–60","id":"s46"},{"no":47,"term":"説AB","read":"AをときてBしむ","mean":"Aを説得してBさせる","g":"No.31–60","id":"s47"},{"no":48,"term":"宜～","read":"よろしく～べし","mean":"～するのがよい","g":"No.31–60","id":"s48"},{"no":49,"term":"其～乎","read":"それ～か","mean":"それは～だろう","g":"No.31–60","id":"s49"},{"no":50,"term":"只～","read":"ただ～のみ","mean":"ただ～だけだ","g":"No.31–60","id":"s50"},{"no":51,"term":"但～","read":"ただ～のみ","mean":"ただ～だけだ","g":"No.31–60","id":"s51"},{"no":52,"term":"惟～已","read":"ただ～のみ","mean":"ただ～だけだ","g":"No.31–60","id":"s52"},{"no":53,"term":"唯～耳","read":"ただ～のみ","mean":"ただ～だけだ","g":"No.31–60","id":"s53"},{"no":54,"term":"縦～","read":"たとひ～とも","mean":"たとえ～としても","g":"No.31–60","id":"s54"},{"no":55,"term":"為～","read":"～る/～らる","mean":"～される","g":"No.31–60","id":"s55"},{"no":56,"term":"為A所B","read":"AのBところとなる","mean":"AにBされる","g":"No.31–60","id":"s56"},{"no":57,"term":"誰カ～","read":"疑問：たれか～/反語：たれか～ん","mean":"疑問：だれが～か/反語：だれが～か、いやだれも～ない","g":"No.31–60","id":"s57"},{"no":58,"term":"直～","read":"ただ～のみ","mean":"ただ～だけだ","g":"No.31–60","id":"s58"},{"no":59,"term":"遣ABC","read":"AをしてCをBしむ","mean":"AにCをBさせる","g":"No.31–60","id":"s59"},{"no":60,"term":"当～","read":"まさに～べし","mean":"当然～すべきである/きっと～だろう","g":"No.31–60","id":"s60"},{"no":61,"term":"独～乎","read":"ひとり～んや","mean":"どうして～か、いや～ない","g":"No.61–90","id":"s61"},{"no":62,"term":"独～耳","read":"ひとり～のみ","mean":"ただ～だけだ","g":"No.61–90","id":"s62"},{"no":63,"term":"奈～何","read":"疑問：～いかんせん/反語：～いかんせん","mean":"疑問：～をどうしようか/反語：～をどうしようか、いや～どうすることもできない","g":"No.61–90","id":"s63"},{"no":64,"term":"猶～","read":"なお～ごとし","mean":"ちょうど～のようだ","g":"No.61–90","id":"s64"},{"no":65,"term":"何～乎","read":"疑問：なんぞ～や/反語：なんぞ～んや","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.61–90","id":"s65"},{"no":66,"term":"何～也","read":"なんぞ～や","mean":"なんと～なことよ","g":"No.61–90","id":"s66"},{"no":67,"term":"何為～","read":"疑問：なんすれぞ～/反語：なんすれぞ～ん","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.61–90","id":"s67"},{"no":68,"term":"何独～","read":"なんぞひとり～のみならんや","mean":"どうしてただ～だけだろうか、いや、～だけではない。","g":"No.61–90","id":"s68"},{"no":69,"term":"何以～","read":"疑問：なにをもって～/反語：なにをもって～ん","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.61–90","id":"s69"},{"no":70,"term":"何ヲカ～","read":"疑問：なにをか～/反語：なにをか～ん","mean":"疑問：何を～か/反語：何を～か、いやなにも～ない","g":"No.61–90","id":"s70"},{"no":71,"term":"何ゾ～","read":"疑問：なんぞ～/反語：なんぞ～ん","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.61–90","id":"s71"},{"no":72,"term":"寧A,無B","read":"むしろAとも、Bなかれ","mean":"いっそAしても、Bになってはいけない","g":"No.61–90","id":"s72"},{"no":73,"term":"寧クンゾ～","read":"疑問：いづくんぞ～/反語：いづくんぞ～ん","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.61–90","id":"s73"},{"no":74,"term":"莫～","read":"～なし","mean":"～がない","g":"No.61–90","id":"s74"},{"no":75,"term":"莫如A","read":"Aにしくはなし","mean":"Aに及ぶものはない","g":"No.61–90","id":"s75"},{"no":76,"term":"毋～","read":"～なし","mean":"～がない","g":"No.61–90","id":"s76"},{"no":77,"term":"匪～","read":"～にあらず","mean":"～でない","g":"No.61–90","id":"s77"},{"no":78,"term":"被～","read":"～る/～らる","mean":"～される","g":"No.61–90","id":"s78"},{"no":79,"term":"非～","read":"～にあらず","mean":"～でない","g":"No.61–90","id":"s79"},{"no":80,"term":"非不～","read":"～ざるにあらず","mean":"～しないことはない","g":"No.61–90","id":"s80"},{"no":81,"term":"非無～","read":"～なきにあらず","mean":"～がないわけではない","g":"No.61–90","id":"s81"},{"no":82,"term":"不～","read":"～ず","mean":"～しない/～でない","g":"No.61–90","id":"s82"},{"no":83,"term":"不A、不B","read":"Aずんば、Bず","mean":"AしないならばBしない","g":"No.61–90","id":"s83"},{"no":84,"term":"不敢～","read":"あへて～ず","mean":"決して～しない","g":"No.61–90","id":"s84"},{"no":85,"term":"不可～","read":"～べからず","mean":"～できない","g":"No.61–90","id":"s85"},{"no":86,"term":"不可不～","read":"～ざるべからず","mean":"～しなければならない","g":"No.61–90","id":"s86"},{"no":87,"term":"不敢不～","read":"あへて～ずんばあらず","mean":"～せざるを得ない","g":"No.61–90","id":"s87"},{"no":88,"term":"不倶～","read":"ともには～ず","mean":"二つともは～することができない","g":"No.61–90","id":"s88"},{"no":89,"term":"不唯～","read":"ただに～のみならず","mean":"ただ～だけではない。","g":"No.61–90","id":"s89"},{"no":90,"term":"弗～","read":"～ず","mean":"～しない/～でない","g":"No.61–90","id":"s90"},{"no":91,"term":"不常～","read":"つねには～ず","mean":"いつも～するとは限らない","g":"No.91–122","id":"s91"},{"no":92,"term":"不得～","read":"～をえず","mean":"～できない","g":"No.91–122","id":"s92"},{"no":93,"term":"不得不～","read":"～ざるをえず","mean":"～せざるを得ない","g":"No.91–122","id":"s93"},{"no":94,"term":"不能～","read":"～あたはず","mean":"～できない","g":"No.91–122","id":"s94"},{"no":95,"term":"不能不～","read":"～ざるあたはず","mean":"～せざるを得ない","g":"No.91–122","id":"s95"},{"no":96,"term":"不必～","read":"かならずしも～ず","mean":"必ず～とは限らない","g":"No.91–122","id":"s96"},{"no":97,"term":"不復～","read":"また～ず","mean":"二度と～しない","g":"No.91–122","id":"s97"},{"no":98,"term":"不亦～乎","read":"また～ずや","mean":"なんと～ではないか","g":"No.91–122","id":"s98"},{"no":99,"term":"見～","read":"～る/～らる","mean":"～される","g":"No.91–122","id":"s99"},{"no":100,"term":"未～","read":"いまだ～ず","mean":"まだ～ない","g":"No.91–122","id":"s100"},{"no":101,"term":"未嘗不～","read":"いまだかつて～ずんばあらず","mean":"今まで～しなかったことがない","g":"No.91–122","id":"s101"},{"no":102,"term":"無～","read":"～なし","mean":"～がない","g":"No.91–122","id":"s102"},{"no":103,"term":"無A、非B","read":"Aなくんば、Bにあらず","mean":"AがないならばBでない","g":"No.91–122","id":"s103"},{"no":104,"term":"無A、不B","read":"Aなくんば、Bず","mean":"AがないならBしない","g":"No.91–122","id":"s104"},{"no":105,"term":"無A不B","read":"AとしてBざるなし","mean":"どんなAでも必ずBする","g":"No.91–122","id":"s105"},{"no":106,"term":"無A無B","read":"AとなくBとなく","mean":"ABの区別なく","g":"No.91–122","id":"s106"},{"no":107,"term":"無非～","read":"～にあらざるはなし","mean":"～でないものはない","g":"No.91–122","id":"s107"},{"no":108,"term":"無不～","read":"～ざるなし","mean":"～しないことはない","g":"No.91–122","id":"s108"},{"no":109,"term":"召AB","read":"AをめしてBしむ","mean":"Aを呼んでBさせる","g":"No.91–122","id":"s109"},{"no":110,"term":"命AB","read":"AにめいじてBしむ","mean":"Aに命令してBさせる","g":"No.91–122","id":"s110"},{"no":111,"term":"勿～","read":"～なし","mean":"～がない","g":"No.91–122","id":"s111"},{"no":112,"term":"由～","read":"なお～ごとし","mean":"ちょうど～のようだ","g":"No.91–122","id":"s112"},{"no":113,"term":"与其A,寧B","read":"そのAよりは、むしろB","mean":"Aするよりは、Bするほうがよい","g":"No.91–122","id":"s113"},{"no":114,"term":"令ABC","read":"AをしてCをBしむ","mean":"AにCをBさせる","g":"No.91–122","id":"s114"},{"no":115,"term":"若～","read":"もし～ば","mean":"もし～ならば","g":"No.91–122","id":"s115"},{"no":116,"term":"若～何","read":"疑問：～いかんせん/反語：～いかんせん","mean":"疑問：～をどうしようか/反語：～をどうしようか、いや～どうすることもできない","g":"No.91–122","id":"s116"},{"no":117,"term":"奚～乎","read":"疑問：なんぞ～や/反語：なんぞ～んや","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.91–122","id":"s117"},{"no":118,"term":"孰カ～","read":"疑問：たれか～/反語：たれか～ん","mean":"疑問：だれが～か/反語：だれが～か、いやだれも～ない","g":"No.91–122","id":"s118"},{"no":119,"term":"孰レカ～","read":"いづれか～","mean":"どちらが～か","g":"No.91–122","id":"s119"},{"no":120,"term":"曷～乎","read":"疑問：なんぞ～や/反語：なんぞ～んや","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.91–122","id":"s120"},{"no":121,"term":"焉クンゾ～","read":"疑問：いづくんぞ～/反語：いづくんぞ～ん","mean":"疑問：どうして～か/反語：どうして～か、いや～ない","g":"No.91–122","id":"s121"},{"no":122,"term":"苟～","read":"いやしくも～ば","mean":"もし～ならば","g":"No.91–122","id":"s122"}]},{"id":"w","name":"重要単語","short":"単語","badge":"単","unit":"語","desc":"あ行〜ら行の頻出語。読みと意味をセットで覚える","groups":["あ行","か行","さ行","た行","な行","は行","ま行","や行","ら行"],"items":[{"no":1,"g":"あ行","term":"字","read":"あざな","mean":"人の呼び名","id":"w1"},{"no":2,"g":"あ行","term":"与ル","read":"あずかル","mean":"関わる","id":"w2"},{"no":3,"g":"あ行","term":"遊ブ","read":"あそブ","mean":"旅に出る","id":"w3"},{"no":4,"g":"あ行","term":"与フ","read":"あたフ","mean":"与える","id":"w4"},{"no":5,"g":"あ行","term":"中ツ","read":"あツ","mean":"あたる","id":"w5"},{"no":6,"g":"あ行","term":"過ツ","read":"あやまツ","mean":"過ちを犯す","id":"w6"},{"no":7,"g":"あ行","term":"見ハル","read":"あらハル","mean":"現れる","id":"w7"},{"no":8,"g":"あ行","term":"或イハ","read":"あるイハ","mean":"あるもの（時）は、あるいは","id":"w8"},{"no":9,"g":"あ行","term":"如何","read":"いかん","mean":"どのようであるか","id":"w9"},{"no":10,"g":"あ行","term":"徒ニ","read":"いたづらに","mean":"無駄に","id":"w10"},{"no":11,"g":"あ行","term":"傷ム","read":"いたム","mean":"悲しむ、傷つく","id":"w11"},{"no":12,"g":"あ行","term":"一日","read":"いちじつ","mean":"ある日","id":"w12"},{"no":13,"g":"あ行","term":"一旦","read":"いつたん","mean":"ある朝、ある日","id":"w13"},{"no":14,"g":"あ行","term":"所謂","read":"いはゆる","mean":"世間でいうところの","id":"w14"},{"no":15,"g":"あ行","term":"徐ニ","read":"おもむろニ","mean":"落ち着いて、ゆっくりと","id":"w15"},{"no":16,"g":"あ行","term":"凡ソ","read":"およソ","mean":"だいたい","id":"w16"},{"no":17,"g":"か行","term":"客","read":"かく","mean":"旅人","id":"w17"},{"no":18,"g":"か行","term":"客舎","read":"かくしゃ","mean":"旅館、宿","id":"w18"},{"no":19,"g":"か行","term":"如シ是","read":"かくノごとシ","mean":"このとおり","id":"w19"},{"no":20,"g":"か行","term":"寡人","read":"かじん","mean":"王が自分を指して言う","id":"w20"},{"no":21,"g":"か行","term":"難シ","read":"かたシ","mean":"難しい","id":"w21"},{"no":22,"g":"か行","term":"嘗テ","read":"かつテ","mean":"以前に","id":"w22"},{"no":23,"g":"か行","term":"易フ","read":"かフ","mean":"とりかえる","id":"w23"},{"no":24,"g":"か行","term":"干戈","read":"かんか","mean":"戦争","id":"w24"},{"no":25,"g":"か行","term":"雁信","read":"がんしん","mean":"手紙","id":"w25"},{"no":26,"g":"か行","term":"義","read":"ぎ","mean":"人としての正しい道","id":"w26"},{"no":27,"g":"か行","term":"奇","read":"きトス","mean":"珍しい、優れている","id":"w27"},{"no":28,"g":"か行","term":"与ス","read":"くみス","mean":"賛成する、仲間になる","id":"w28"},{"no":29,"g":"か行","term":"君子","read":"くんし","mean":"人徳のすぐれた立派な人","id":"w29"},{"no":30,"g":"か行","term":"蓋シ","read":"けだシ","mean":"思うに","id":"w30"},{"no":31,"g":"か行","term":"後世","read":"こうせい","mean":"自分よりあとに生まれた者","id":"w31"},{"no":32,"g":"か行","term":"於テ是","read":"ここニおいテ","mean":"そこで、それで","id":"w32"},{"no":33,"g":"か行","term":"是ヲ以","read":"ここヲもっテ","mean":"こういうわけで","id":"w33"},{"no":34,"g":"か行","term":"故人","read":"こじん","mean":"旧友、親友","id":"w34"},{"no":35,"g":"か行","term":"対フ","read":"こたフ","mean":"目上の人にお答えする","id":"w35"},{"no":36,"g":"か行","term":"尽ク","read":"ことごとク","mean":"全部","id":"w36"},{"no":37,"g":"さ行","term":"左右","read":"さゆう","mean":"側近の臣","id":"w37"},{"no":38,"g":"さ行","term":"士","read":"し","mean":"学徳のある者、師弟","id":"w38"},{"no":39,"g":"さ行","term":"子","read":"し","mean":"あなた（男性に対して）","id":"w39"},{"no":40,"g":"さ行","term":"師","read":"し","mean":"先生","id":"w40"},{"no":41,"g":"さ行","term":"弑ス","read":"しいス","mean":"身分が上の者を殺す","id":"w41"},{"no":42,"g":"さ行","term":"市井","read":"しせい","mean":"まち、世の中","id":"w42"},{"no":43,"g":"さ行","term":"相","read":"しょう","mean":"大臣","id":"w43"},{"no":44,"g":"さ行","term":"小人","read":"しょうじん","mean":"人徳や身分の低い人","id":"w44"},{"no":45,"g":"さ行","term":"丈夫","read":"じょうふ","mean":"すぐれた立派な人間","id":"w45"},{"no":46,"g":"さ行","term":"信","read":"しん","mean":"まこと","id":"w46"},{"no":47,"g":"さ行","term":"人間","read":"じんかん","mean":"世の中","id":"w47"},{"no":48,"g":"さ行","term":"過グ","read":"すグ","mean":"通り過ぎる","id":"w48"},{"no":49,"g":"さ行","term":"寡シ","read":"すくなシ","mean":"少ない","id":"w49"},{"no":50,"g":"さ行","term":"頗ル","read":"すこぶル","mean":"非常に","id":"w50"},{"no":51,"g":"さ行","term":"則チ","read":"すなはチ","mean":"～ならば、すぐに","id":"w51"},{"no":52,"g":"さ行","term":"輒チ","read":"すなはチ","mean":"そのたびごとに","id":"w52"},{"no":53,"g":"さ行","term":"乃ち","read":"すなわチ","mean":"そこで","id":"w53"},{"no":54,"g":"さ行","term":"小子","read":"せうし","mean":"おまえ、おまえたち","id":"w54"},{"no":55,"g":"さ行","term":"夫レ","read":"そレ","mean":"そもそも","id":"w55"},{"no":56,"g":"た行","term":"他日","read":"たじつ","mean":"他の日、以前","id":"w56"},{"no":57,"g":"た行","term":"直","read":"ただ","mean":"～だけ","id":"w57"},{"no":58,"g":"た行","term":"直チニ","read":"ただチニ","mean":"すぐに","id":"w58"},{"no":59,"g":"た行","term":"立ニ","read":"たちどころニ","mean":"すぐに","id":"w59"},{"no":60,"g":"た行","term":"偶","read":"たまたま","mean":"思いがけなく","id":"w60"},{"no":61,"g":"た行","term":"事フ","read":"つかフ","mean":"仕える","id":"w61"},{"no":62,"g":"た行","term":"卒ニ","read":"つひニ","mean":"結局","id":"w62"},{"no":63,"g":"た行","term":"竟ニ","read":"つひニ","mean":"結局","id":"w63"},{"no":64,"g":"た行","term":"倶ニ","read":"ともニ","mean":"共に","id":"w64"},{"no":65,"g":"な行","term":"若","read":"なんじ","mean":"あなた","id":"w65"},{"no":66,"g":"な行","term":"何者","read":"なんトナレバ","mean":"なぜならば","id":"w66"},{"no":67,"g":"な行","term":"何則","read":"なんトナレバすなわチ","mean":"なぜならば","id":"w67"},{"no":68,"g":"な行","term":"卒カニ","read":"にはカニ","mean":"急に","id":"w68"},{"no":69,"g":"な行","term":"俄ニ","read":"にはかニ","mean":"急に","id":"w69"},{"no":70,"g":"は行","term":"甚ダ","read":"はなはダ","mean":"とても","id":"w70"},{"no":71,"g":"は行","term":"私ニ","read":"ひそかニ","mean":"こっそり","id":"w71"},{"no":72,"g":"は行","term":"為り人","read":"ひとトなり","mean":"人柄","id":"w72"},{"no":73,"g":"は行","term":"百姓","read":"ひゃくせい","mean":"庶民、人々","id":"w73"},{"no":74,"g":"は行","term":"夫子","read":"ふうし","mean":"賢者、先生などへの敬称","id":"w74"},{"no":75,"g":"は行","term":"不肖","read":"ふしょう","mean":"愚か、愚か者","id":"w75"},{"no":76,"g":"ま行","term":"方ニ","read":"まさニ","mean":"ちょうど","id":"w76"},{"no":77,"g":"ま行","term":"見ユ","read":"まみユ","mean":"お目にかかる","id":"w77"},{"no":78,"g":"ま行","term":"見ル","read":"みル","mean":"会う","id":"w78"},{"no":79,"g":"ま行","term":"宜ナリ","read":"むベナリ","mean":"もっともだ","id":"w79"},{"no":80,"g":"ま行","term":"固ヨリ","read":"もとヨリ","mean":"もともと","id":"w80"},{"no":81,"g":"ま行","term":"故ヨリ","read":"もとヨリ","mean":"もともと","id":"w81"},{"no":82,"g":"ま行","term":"素ヨリ","read":"もとヨリ","mean":"もともと","id":"w82"},{"no":83,"g":"や行","term":"已ム","read":"やム","mean":"終わる","id":"w83"},{"no":84,"g":"や行","term":"夜来","read":"やらい","mean":"昨夜","id":"w84"},{"no":85,"g":"や行","term":"故ニ","read":"ゆえニ","mean":"だから","id":"w85"},{"no":86,"g":"や行","term":"所以","read":"ゆえん","mean":"理由、手段、方法","id":"w86"},{"no":87,"g":"や行","term":"之ク","read":"ゆク","mean":"行く","id":"w87"},{"no":88,"g":"や行","term":"過ル","read":"よぎル","mean":"通り過ぎる","id":"w88"},{"no":89,"g":"や行","term":"能ク","read":"よク","mean":"することができる","id":"w89"},{"no":90,"g":"ら行","term":"吏","read":"り","mean":"役人","id":"w90"}]}]};
+
+/* ---------- data ---------- */
+const DECKS = DATA.decks;
+const DECK = {};
+const ITEM = {};
+const ALL_ITEMS = [];
+DECKS.forEach(d => { DECK[d.id] = d; d.items.forEach(it => { it.deck = d.id; ITEM[it.id] = it; ALL_ITEMS.push(it); }); });
+const TOTAL = ALL_ITEMS.length;
+const DEFAULT_DECK = DECKS[0].id;
+
+/* ---------- utilities ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function shuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+const KANJI = "[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF々〆ヶ]";
+const RUBY_RE = new RegExp("(" + KANJI + "+)《([ぁ-ゖー・]+)》", "g");
+
+/* 線のアイコン（24×24、stroke 2） */
+const ICONS = {
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 8 10 8a17.6 17.6 0 0 1-2.16 3.19M6.6 6.6C3.9 8.4 2 12 2 12s3.5 8 10 8a9.7 9.7 0 0 0 5.4-1.6M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/>',
+  again: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  skip: '<path d="m5 4 10 8-10 8z"/><path d="M19 5v14"/>',
+  swap: '<path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/>',
+  cards: '<rect x="3" y="7" width="14" height="14" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/>',
+  quiz: '<path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  okc: '<circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/>',
+  warn: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+  cloud: '<path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78A6 6 0 0 0 4 12.5 3.5 3.5 0 0 0 6.5 19z"/>'
+};
+function icon(name, cls) { return '<svg class="ic' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + "</svg>"; }
+
+/* 横書き用：《ひらがな》はルビ、《カタカナ》は送り仮名、〔 〕は返り点 */
+function mk(s) {
+  let h = esc(s);
+  h = h.replace(RUBY_RE, "<ruby>$1<rt>$2</rt></ruby>");
+  h = h.replace(/《([^》]*)》/g, '<span class="ok">$1</span>');
+  h = h.replace(/〔([^〕]*)〕/g, '<span class="kt">$1</span>');
+  return h;
+}
+
+/* ---------- 縦書きの見出し ---------- */
+const toFull = ch => /[A-Za-z0-9]/.test(ch) ? String.fromCharCode(ch.charCodeAt(0) + 0xFEE0) : ch === "," ? "、" : ch;
+const KANA = /[ァ-ヶーぁ-ゖ]/;
+const PUNCT = /[。、，・／]/;
+/* 句形：本体を縦の列に分け、（注記）と※以下は横書きの補足に回す */
+function parseKukei(s) {
+  let main = s, star = "";
+  const p = s.indexOf("※");
+  if (p >= 0) { main = s.slice(0, p); star = "※" + s.slice(p + 1).trim(); }
+  const chars = [...main.trim()];
+  const cols = [[]], notes = [];
+  let cur = cols[0], depth = 0, par = "";
+  const last = () => { if (!cur.length) cur.push({ c: "", o: "", k: "" }); return cur[cur.length - 1]; };
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    if (depth > 0) {
+      par += ch;
+      if (ch === "（") depth++;
+      else if (ch === "）" && --depth === 0) { notes.push(par); par = ""; }
+      continue;
+    }
+    if (ch === "（") { depth = 1; par = "（"; continue; }
+    if (ch === "《" || ch === "〔") {
+      const close = ch === "《" ? "》" : "〕";
+      let j = chars.indexOf(close, i + 1); if (j < 0) j = chars.length;
+      const t = chars.slice(i + 1, j).join("");
+      if (ch === "《") last().o += t; else last().k += t;
+      i = j; continue;
+    }
+    if (ch === "／") { cur = []; cols.push(cur); continue; }
+    if (/\s/.test(ch)) continue;
+    cur.push({ c: toFull(ch), o: "", k: "" });
+  }
+  if (par) notes.push(par);
+  if (star) notes.push(star);
+  return { cols: cols.filter(c => c.length), notes };
+}
+/* 単語・成句：漢字に続くかなを送り仮名として右下へ */
+function parsePlain(s) {
+  const cur = [];
+  for (const raw of s) {
+    const ch = toFull(raw);
+    if (/\s/.test(ch)) continue;
+    const prev = cur[cur.length - 1];
+    if (KANA.test(ch) && prev && !PUNCT.test(prev.c)) { prev.o += ch; continue; }
+    cur.push({ c: ch, o: "", k: "" });
+  }
+  return [cur];
+}
+const ROT = /[～〜ー－‐\-（）()［］\[\]「」『』…‥：]/;
+const DOTP = /[、。，．]/;
+function glyph(ch) {
+  const cls = ROT.test(ch) ? "rot" : DOTP.test(ch) ? "dotp" : "";
+  return cls ? '<span class="' + cls + '">' + esc(ch) + "</span>" : esc(ch);
+}
+function stackHTML(s) { return [...s].map(ch => "<span>" + glyph(ch) + "</span>").join(""); }
+function unitHTML(u) {
+  return '<span class="u"><span class="u-c">' + glyph(u.c) + "</span>" +
+    (u.k ? '<span class="u-k">' + stackHTML(u.k) + "</span>" : "") +
+    (u.o ? '<span class="u-o">' + stackHTML(u.o) + "</span>" : "") + "</span>";
+}
+function plainTerm(s) { return s.replace(/〔[^〕]*〕|[《》]/g, ""); }
+function vtermHTML(cols, label) {
+  return '<div class="vterm" role="img" aria-label="' + esc(label) + '">' + cols.map(col => '<span class="vcol" aria-hidden="true">' + col.map(unitHTML).join("") + "</span>").join("") + "</div>";
+}
+function termHTML(it) {
+  if (it.deck === "k") {
+    const p = parseKukei(it.term);
+    return '<div class="term term-k">' + vtermHTML(p.cols, plainTerm(it.term)) + (p.notes.length ? '<div class="kk-ps">' + p.notes.map(mk).join("　") + "</div>" : "") + "</div>";
+  }
+  return '<div class="term term-' + it.deck + '">' + vtermHTML(parsePlain(it.term), it.term) + "</div>";
+}
+
+/* 成句：疑問／反語などの併記を行に分ける */
+function fmtAlt(s) {
+  const parts = String(s).split("/").map(x => x.trim()).filter(Boolean);
+  if (parts.length === 1) return esc(parts[0]);
+  return parts.map(x => {
+    const m = x.match(/^(疑問|反語)：(.*)$/);
+    return m ? '<span class="alt"><span class="tag acc ' + (m[1] === "疑問" ? "a-blue" : "a-violet") + '">' + m[1] + "</span>" + esc(m[2]) + "</span>" : '<span class="alt">' + esc(x) + "</span>";
+  }).join("");
+}
+function readHTML(it) {
+  if (it.deck === "k") return mk(it.read);
+  if (it.deck === "s") return fmtAlt(it.read);
+  return esc(it.read);
+}
+function meanHTML(it) { return it.deck === "s" ? fmtAlt(it.mean) : esc(it.mean); }
+function exHTML(it) {
+  if (!it.ex || !it.ex.length) return "";
+  return '<div class="ans-row ex-row"><span class="ans-label">例文</span><div class="ex-wrap"><div class="ex-list">' + it.ex.map(e =>
+    '<div class="ex"><div class="ex-kun">' + mk(e.kun) + "</div>" +
+    (e.src ? '<div class="ex-src">' + esc(e.src) + "</div>" : "") +
+    '<div class="ex-kaki">' + mk(e.kaki) + "</div>" +
+    '<div class="ex-yaku">' + esc(e.yaku) + "</div></div>").join("") + '</div>' +
+    (it.ex.length > 1 ? '<p class="ex-help">例文は' + it.ex.length + "つあります。右から順に読み、入りきらない分は横にスクロールできます。</p>" : "") + "</div></div>";
+}
+function rowHTML(label, cls, body) { return '<div class="ans-row"><span class="ans-label">' + label + '</span><div class="' + cls + '">' + body + "</div></div>"; }
+
+/* ---------- progress store ---------- */
+const LS_KEY = "kanbun-drill-progress-v1";
+const LS_PREF = "kanbun-drill-prefs-v2";
+const LS_THEME = "kanbun-drill-theme";
+function readLS(k) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+function writeLS(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+const LOCAL_OK = (() => { try { localStorage.setItem("__kd", "1"); localStorage.removeItem("__kd"); return true; } catch (e) { return false; } })();
+
+function blankStore() { return { v: 1, cards: {}, tests: [], updatedAt: 0 }; }
+function sanitize(o) {
+  const s = blankStore();
+  if (!o || typeof o !== "object") return s;
+  if (o.cards && typeof o.cards === "object") {
+    for (const [k, c] of Object.entries(o.cards)) {
+      if (!ITEM[k] || !c || typeof c !== "object") continue;
+      s.cards[k] = { s: [0, 1, 2].includes(c.s) ? c.s : 0, c: Math.max(0, +c.c || 0), w: Math.max(0, +c.w || 0), t: +c.t || 0 };
+    }
+  }
+  if (Array.isArray(o.tests)) {
+    s.tests = o.tests.filter(t => t && typeof t === "object").slice(-30)
+      .map(t => ({ d: +t.d || 0, deck: String(t.deck || ""), type: String(t.type || ""), n: +t.n || 0, ok: +t.ok || 0 }));
+  }
+  s.updatedAt = +o.updatedAt || 0;
+  return s;
+}
+let store = sanitize(readLS(LS_KEY));
+
+const prefDefaults = { cDeck: DEFAULT_DECK, cGroup: "", cFilter: "todo", cOrder: "num", cSwap: false, tDeck: DEFAULT_DECK, tGroup: "", tType: "mean", tN: 10, tPrio: "weak" };
+let prefs = Object.assign({}, prefDefaults, readLS(LS_PREF) || {});
+if (!DECK[prefs.cDeck] && prefs.cDeck !== "all") prefs.cDeck = DEFAULT_DECK;
+if (!DECK[prefs.tDeck] && prefs.tDeck !== "all") prefs.tDeck = DEFAULT_DECK;
+function savePrefs() { writeLS(LS_PREF, prefs); }
+
+function card(id) { return store.cards[id] || { s: 0, c: 0, w: 0, t: 0 }; }
+function setCard(id, patch) { store.cards[id] = Object.assign({}, card(id), patch, { t: Date.now() }); persist(); }
+function persist() { store.updatedAt = Date.now(); writeLS(LS_KEY, store); scheduleCloud(); }
+
+/* アカウント保存（db）: 使えるときだけ。使えなければブラウザ保存のみ */
+const cloud = { mode: "local", ref: null, writing: false, pending: false, timer: null, retried: false };
+async function initCloud() {
+  if (!window.claude || typeof window.claude.use !== "function") return;
+  cloud.mode = "checking"; updateSaveState();
+  try {
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    const uid = user ? await user.id() : null;
+    if (!db || !uid) { cloud.mode = "local"; updateSaveState(); return; }
+    const ref = db.doc("data/users/" + uid + "/progress");
+    const snap = await ref.get();
+    cloud.ref = ref; cloud.mode = "cloud";
+    if (snap.exists) {
+      const remote = sanitize(snap.data());
+      if (remote.updatedAt > store.updatedAt) { store = remote; writeLS(LS_KEY, store); render(); }
+      else if (store.updatedAt > remote.updatedAt) scheduleCloud(0);
+    } else if (store.updatedAt) scheduleCloud(0);
+  } catch (e) { cloud.mode = "local"; }
+  updateSaveState();
+}
+function scheduleCloud(delay = 1200) {
+  if (cloud.mode !== "cloud") return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(flushCloud, delay);
+}
+async function flushCloud() {
+  cloud.timer = null;
+  if (cloud.mode !== "cloud" || !cloud.ref) return;
+  if (cloud.writing) { cloud.pending = true; return; }
+  cloud.writing = true; cloud.pending = false;
+  try {
+    await cloud.ref.set(JSON.parse(JSON.stringify(store)));
+    cloud.retried = false;
+  } catch (e) {
+    const code = e && e.code;
+    if ((code === "unavailable" || code === "resource_exhausted") && !cloud.retried) { cloud.retried = true; cloud.pending = true; }
+    else if (code === "quota_exceeded" || code === "unavailable" || code === "resource_exhausted") { cloud.retried = false; }
+    else { cloud.mode = "local"; }
+  } finally {
+    cloud.writing = false;
+    updateSaveState();
+    if (cloud.pending && cloud.mode === "cloud") scheduleCloud(cloud.retried ? 2500 + Math.random() * 2000 : 600);
+  }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && cloud.timer) { clearTimeout(cloud.timer); flushCloud(); } });
+
+function updateSaveState() {
+  const el = $("#saveState");
+  if (cloud.mode === "cloud") el.textContent = "進捗はあなたのアカウントに保存されます（ほかの端末でも続きから）";
+  else if (cloud.mode === "checking") el.textContent = "保存先を確認しています…";
+  else if (LOCAL_OK) el.textContent = "進捗はこのブラウザに保存されます";
+  else el.textContent = "この表示では進捗を保存できません（閉じると消えます）";
+}
+
+/* ---------- theme ---------- */
+const darkMQ = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
+function storedTheme() { try { const t = localStorage.getItem(LS_THEME); return t === "light" || t === "dark" ? t : null; } catch (e) { return null; } }
+let themeTimer = null;
+function applyTheme(t, animate) {
+  const root = document.documentElement;
+  if (animate) {
+    root.classList.add("theme-anim");
+    clearTimeout(themeTimer);
+    themeTimer = setTimeout(() => root.classList.remove("theme-anim"), 420);
+  }
+  root.setAttribute("data-theme", t);
+  document.querySelectorAll(".theme-seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === t)));
+}
+document.querySelectorAll(".theme-seg button").forEach(b => b.addEventListener("click", () => {
+  try { localStorage.setItem(LS_THEME, b.dataset.mode); } catch (e) {}
+  applyTheme(b.dataset.mode, true);
+}));
+if (darkMQ) {
+  const onOS = e => { if (!storedTheme()) applyTheme(e.matches ? "dark" : "light", true); };
+  if (darkMQ.addEventListener) darkMQ.addEventListener("change", onOS); else if (darkMQ.addListener) darkMQ.addListener(onOS);
+}
+applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light", false);
+
+/* ---------- counts ---------- */
+function itemsOf(deck, group) {
+  let items = deck === "all" ? ALL_ITEMS : DECK[deck].items;
+  if (group && deck !== "all") items = items.filter(it => it.g === group);
+  return items;
+}
+function countOf(items) {
+  let k = 0, m = 0;
+  for (const it of items) { const s = card(it.id).s; if (s === 2) k++; else if (s === 1) m++; }
+  return { k, m, n: items.length - k - m, total: items.length };
+}
+function pctOf(x, total) { return total ? x / total * 100 : 0; }
+function countLabel(c) { return "覚えた " + c.k + "、あいまい " + c.m + "、未学習 " + c.n; }
+function barHTML(c, thin) {
+  return '<div class="stack' + (thin ? " thin" : "") + '" role="img" aria-label="' + countLabel(c) + '"><i class="k" style="width:' + pctOf(c.k, c.total).toFixed(2) + '%"></i><i class="m" style="width:' + pctOf(c.m, c.total).toFixed(2) + '%"></i></div>';
+}
+/* 円グラフ：parts は [割合(%), 色クラス] を先頭から順に。円周 100 の円で、後ろの区間から重ねて描く */
+function ringHTML(size, parts, label, inner) {
+  let acc = 0;
+  const arcs = [];
+  parts.forEach(([p, cls]) => { acc += p; if (p > 0) arcs.push('<circle class="val ' + cls + '" cx="18" cy="18" r="15.9155" stroke-dasharray="' + Math.min(acc, 100).toFixed(2) + ' 100"></circle>'); });
+  return '<div class="ring" style="--s:' + size + 'px" role="img" aria-label="' + esc(label) + '"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="trk" cx="18" cy="18" r="15.9155"></circle>' + arcs.reverse().join("") + '</svg><span class="ring-n" aria-hidden="true"><span>' + inner + "</span></span></div>";
+}
+function statsHTML(c, labels, cls) {
+  const L = labels || ["覚えた", "あいまい", "未学習"];
+  return '<div class="stats' + (cls ? " " + cls : "") + '">' +
+    '<div class="stat"><span class="lab"><span class="dot k"></span>' + L[0] + '</span><b>' + c.k + "</b></div>" +
+    '<div class="stat"><span class="lab"><span class="dot m"></span>' + L[1] + '</span><b>' + c.m + "</b></div>" +
+    '<div class="stat"><span class="lab"><span class="dot n"></span>' + L[2] + '</span><b>' + c.n + "</b></div></div>";
+}
+/* セッションの進み具合：前回の位置から伸ばす */
+function trackHTML(sess, pct) {
+  const from = sess.lastPct == null ? pct : sess.lastPct;
+  sess.lastPct = pct;
+  return '<div class="track" role="progressbar" aria-label="進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(pct) + '"><i style="width:' + from.toFixed(1) + '%" data-to="' + pct.toFixed(1) + '"></i></div>';
+}
+function settleTracks() {
+  document.querySelectorAll(".track i[data-to]").forEach(el => { void el.offsetWidth; el.style.width = el.dataset.to + "%"; });
+}
+const STATUS = ["未学習", "あいまい", "覚えた"];
+const STATUS_CLS = ["chip", "chip tint acc a-amber", "chip tint acc a-green"];
+function chipHTML(id) { const s = card(id).s; return '<span class="' + STATUS_CLS[s] + '"><span class="dot"></span>' + STATUS[s] + "</span>"; }
+function deckLabel(id) { return id === "all" ? "すべて" : DECK[id].short; }
+function deckChip(id, text) { return '<span class="chip tint dk-' + id + '"><span class="dot"></span>' + esc(text) + "</span>"; }
+
+/* 画面を切り替えたとき・問題が進んだときだけ、上から順にふわっと出す */
+function riseIn() {
+  [...$("#app").children].forEach((el, i) => { el.classList.add("rise"); el.style.setProperty("--d", Math.min(i, 5) * 60 + "ms"); });
+}
+/* 設定を変えて描き直しても、操作中のコントロールにフォーカスを戻す */
+function keepFocus(fn) {
+  const a = document.activeElement;
+  const id = a && a.id;
+  fn();
+  if (id) { const el = document.getElementById(id); if (el && el !== document.activeElement) el.focus({ preventScroll: true }); }
+}
+
+/* ---------- view switching ---------- */
+let view = "home";
+let entering = true;
+function go(v) { view = v; entering = true; render(); window.scrollTo(0, 0); }
+document.querySelectorAll(".vtab").forEach(b => b.addEventListener("click", () => go(b.dataset.view)));
+function render() {
+  document.querySelectorAll(".vtab").forEach((b, i) => {
+    const on = b.dataset.view === view;
+    b.setAttribute("aria-selected", String(on));
+    if (on) $(".vtabs").style.setProperty("--i", i);
+  });
+  if (view === "cards") renderCards();
+  else if (view === "test") renderTest();
+  else renderHome();
+  if (entering) { riseIn(); entering = false; }
+  updateSaveState();
+}
+
+/* ---------- home ---------- */
+function fmtDate(ts) {
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2, "0");
+  return (d.getMonth() + 1) + "/" + d.getDate() + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+function renderHome() {
+  const all = countOf(ALL_ITEMS);
+  const kp = pctOf(all.k, all.total), mp = pctOf(all.m, all.total);
+  let h = '<section class="card hero"><div class="hero-h">' +
+    ringHTML(112, [[kp, "k"], [mp, "m"]], countLabel(all), Math.round(kp) + "<small>%</small>") +
+    '<div class="hero-t"><p class="over">全体の進み具合</p>' +
+    '<p class="big">' + all.k + "<small>/ " + TOTAL + " 項目を覚えた</small></p></div></div>" +
+    statsHTML(all) + "</section>";
+
+  h += '<section class="decks">';
+  for (const d of DECKS) {
+    const c = countOf(d.items);
+    h += '<article class="card deck dk-' + d.id + '">' +
+      '<div class="deck-top"><span class="dmark" aria-hidden="true">' + esc(d.badge) + '</span><div class="deck-t"><h3>' + esc(d.name) + "</h3><p>" + esc(d.desc) + "</p></div></div>" +
+      '<div class="prog">' + barHTML(c) + '<span class="pct"><b>' + c.k + "</b> / " + c.total + "</span></div>" +
+      '<details class="grp-d"><summary>' + icon("chev", "chev") + '範囲別に見る<span class="count">' + d.groups.length + '</span></summary><div class="groups">' +
+      d.groups.map(g => { const gc = countOf(d.items.filter(it => it.g === g)); return '<div class="grp"><span>' + esc(g) + "</span>" + barHTML(gc, true) + '<span class="g-c num">' + gc.k + "/" + gc.total + "</span></div>"; }).join("") +
+      "</div></details>" +
+      '<div class="row"><button type="button" class="btn soft" data-act="cards" data-deck="' + d.id + '">' + icon("cards") + 'カードで覚える</button><button type="button" class="btn secondary" data-act="test" data-deck="' + d.id + '">' + icon("quiz") + "テストする</button></div></article>";
+  }
+  h += "</section>";
+
+  const recent = store.tests.slice(-8).reverse();
+  h += '<section class="card"><div class="sec-h"><h2 class="h3">最近のテスト</h2>' + (recent.length ? '<span class="cap">新しい順・' + recent.length + "回</span>" : "") + "</div>";
+  if (!recent.length) h += '<p class="note">まだテストの記録はありません。「ミニテスト」から10問で試せます。</p>';
+  else h += '<ul class="history">' + recent.map(t => {
+    const id = t.deck in DECK ? t.deck : "all";
+    const good = t.n && t.ok / t.n >= 0.8;
+    return "<li>" + (id === "all" ? '<span class="chip"><span class="dot"></span>すべて</span>' : deckChip(id, DECK[id].short)) +
+      '<div class="h-t"><b>' + (t.type === "read" ? "読み方" : "意味") + '</b><span class="num">' + fmtDate(t.d) + "</span></div>" +
+      '<span class="score num' + (good ? " good" : "") + '">' + (good ? icon("check") + '<span class="sr">8割以上</span>' : "") + t.ok + " / " + t.n + "</span></li>";
+  }).join("") + "</ul>";
+  h += "</section>";
+  $("#app").innerHTML = h;
+
+  $("#app").querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => {
+    const d = b.dataset.deck;
+    if (b.dataset.act === "cards") { prefs.cDeck = d; prefs.cGroup = ""; savePrefs(); cs = null; go("cards"); }
+    else { prefs.tDeck = d; prefs.tGroup = ""; savePrefs(); ts = null; go("test"); }
+  }));
+}
+
+/* ---------- form controls ---------- */
+function selectHTML(id, label, options, value, disabled) {
+  return '<div class="field"><label class="label" for="' + id + '">' + label + '</label><div class="select"><select id="' + id + '"' + (disabled ? " disabled" : "") + ">" +
+    options.map(([v, t]) => '<option value="' + esc(v) + '"' + (String(v) === String(value) ? " selected" : "") + ">" + esc(t) + "</option>").join("") + "</select>" + icon("chev") + "</div></div>";
+}
+function segHTML(id, label, options, value, wide) {
+  const i = Math.max(0, options.findIndex(([v]) => String(v) === String(value)));
+  return '<div class="field' + (wide ? " wide" : "") + '"><span class="label" id="' + id + '-l">' + label + '</span><div class="seg block" role="group" aria-labelledby="' + id + '-l" id="' + id + '" style="--n:' + options.length + ";--i:" + i + '"><span class="seg-ind"></span>' +
+    options.map(([v, t], j) => '<button type="button" id="' + id + "-" + j + '" data-v="' + esc(v) + '" aria-pressed="' + (j === i) + '">' + esc(t) + "</button>").join("") + "</div></div>";
+}
+/* つまみを先に動かしてから値を反映する（描き直す場合は動きが見えるよう少し待つ） */
+function bindSeg(id, fn, delay) {
+  const g = $("#" + id);
+  if (!g) return;
+  g.querySelectorAll("button").forEach((b, j) => b.addEventListener("click", () => {
+    if (b.getAttribute("aria-pressed") === "true") return;
+    g.style.setProperty("--i", j);
+    g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    if (delay) setTimeout(() => fn(b.dataset.v), delay); else fn(b.dataset.v);
+  }));
+}
+function deckOptions() { return DECKS.map(d => [d.id, d.name]).concat([["all", "すべての教材"]]); }
+function groupOptions(deck) { return [["", "すべての範囲"]].concat(deck === "all" ? [] : DECK[deck].groups.map(g => [g, g])); }
+
+/* ---------- flash cards ---------- */
+let cs = null;
+const FILTERS = { todo: "覚えていないカード", all: "すべてのカード", mid: "あいまいなカード", miss: "テストで間違えたカード" };
+function makeSession(ids, label) { return { queue: ids, i: 0, flipped: false, known: 0, again: 0, skipped: 0, retryIds: [], label: label || "", fresh: true, lastPct: null }; }
+function newCardSession() {
+  let items = itemsOf(prefs.cDeck, prefs.cGroup);
+  const f = prefs.cFilter;
+  if (f === "todo") items = items.filter(it => card(it.id).s < 2);
+  else if (f === "mid") items = items.filter(it => card(it.id).s === 1);
+  else if (f === "miss") items = items.filter(it => card(it.id).w > 0);
+  let ids = items.map(it => it.id);
+  if (prefs.cOrder === "shuffle") ids = shuffle(ids);
+  return makeSession(ids);
+}
+
+let settingsOpen = false;
+function renderCards() {
+  if (!cs) cs = newCardSession();
+  const summaryText = cs.label ? cs.label :
+    (prefs.cDeck === "all" ? "すべての教材" : DECK[prefs.cDeck].name) + "／" + (prefs.cGroup || "すべての範囲") + "／" + FILTERS[prefs.cFilter] + "／" + (prefs.cOrder === "shuffle" ? "シャッフル" : "番号順");
+  let h = '<details class="settings" id="cSettings"' + (settingsOpen ? " open" : "") + '><summary><span class="sum-ic">' + icon("sliders") + '</span><span class="sum-text">' + esc(summaryText) + '</span><span class="sum-r">出題設定' + icon("chev", "chev") + '</span></summary><div class="controls">' +
+    selectHTML("cDeck", "教材", deckOptions(), prefs.cDeck) +
+    selectHTML("cGroup", "範囲", groupOptions(prefs.cDeck), prefs.cGroup, prefs.cDeck === "all") +
+    selectHTML("cFilter", "出すカード", Object.entries(FILTERS), prefs.cFilter) +
+    segHTML("cOrder", "順番", [["num", "番号順"], ["shuffle", "シャッフル"]], prefs.cOrder) +
+    '<label class="switch" for="cSwap"><input type="checkbox" id="cSwap"' + (prefs.cSwap ? " checked" : "") + '><span class="trk"><span class="thumb"></span></span>意味を表にする</label>' +
+    "</div></details>";
+
+  const q = cs.queue;
+  if (!q.length) {
+    const msg = prefs.cFilter === "todo" ? "この範囲はすべて「覚えた」になっています。" :
+      prefs.cFilter === "mid" ? "「あいまい」のカードはありません。" :
+      prefs.cFilter === "miss" ? "テストで間違えたカードはありません。" : "カードがありません。";
+    h += '<section class="card empty">' + (prefs.cFilter === "all" ? "" : '<span class="badgebig acc a-green">' + icon("check") + "</span>") +
+      '<p class="h3">' + msg + '</p><button type="button" class="btn primary" id="cAll">すべてのカードで復習する</button></section>';
+  } else if (cs.i >= q.length) {
+    h += '<section class="card empty"><span class="badgebig acc a-green">' + icon("check") + '</span><h2 class="h3">このセットはここまで</h2>' +
+      statsHTML({ k: cs.known, m: cs.again, n: cs.skipped }, ["覚えた", "まだ", "記録せず次へ"]) +
+      '<div class="row">' +
+      (cs.retryIds.length ? '<button type="button" class="btn primary" id="cRetry">' + icon("again") + "「まだ」と記録なしの" + cs.retryIds.length + "枚をもう一度</button>" : "") +
+      '<button type="button" class="btn secondary" id="cRestart">同じ条件で最初から</button><button type="button" class="btn secondary" id="cHome">進捗を見る</button></div></section>';
+  } else {
+    const it = ITEM[q[cs.i]];
+    const swap = prefs.cSwap;
+    h += '<div class="sbar"><span class="num"><b>' + (cs.i + 1) + "</b> / " + q.length + "</span>" + trackHTML(cs, cs.i / q.length * 100) + chipHTML(it.id) + "</div>";
+    const front = swap ? '<div class="front-mean">' + meanHTML(it) + "</div>" : termHTML(it);
+    let back = "";
+    if (cs.flipped) {
+      back = '<div class="card-back">' +
+        (swap ? rowHTML("見出し", "", termHTML(it)) : "") +
+        rowHTML("読み", "ans-read", readHTML(it)) +
+        (swap ? "" : rowHTML("意味", "ans-mean", meanHTML(it))) +
+        exHTML(it) + "</div>";
+    }
+    h += '<div class="fcard' + (cs.flipped ? " flipped" + (swap ? "" : " split") : "") + (cs.fresh ? " is-new" : "") + '" id="card" tabindex="0" role="button" aria-label="' + (cs.flipped ? "答えを隠す" : "答えを見る") + '">' +
+      '<div class="card-meta"><span class="tags">' + deckChip(it.deck, DECK[it.deck].short + " No." + it.no) + '<span class="chip">' + esc(it.g) + '</span></span><span class="mode">' + icon("swap") + (swap ? "意味 → 見出し" : "見出し → 読み・意味") + "</span></div>" +
+      '<div class="card-body"><div class="card-front">' + front + "</div>" + back + "</div>" +
+      '<p class="tap-hint">' + icon(cs.flipped ? "eyeOff" : "eye") + (cs.flipped ? "タップで答えを隠す" : "タップで答えを表示") + "</p></div>";
+    cs.fresh = false;
+    h += '<div class="pad">' +
+      '<button type="button" class="btn ghost sm skip" id="cSkip">' + icon("skip") + '記録せず次へ <kbd class="kb">W</kbd></button>' +
+      '<div class="pad-row">' +
+      '<button type="button" class="btn soft acc a-amber" id="cNo">' + icon("again") + '<span>まだ</span><kbd class="kb">A / ←</kbd></button>' +
+      '<button type="button" class="btn primary" id="cFlip">' + icon(cs.flipped ? "eyeOff" : "eye") + "<span>" + (cs.flipped ? "答えを隠す" : "答えを見る") + '</span><kbd class="kb">S / Space</kbd></button>' +
+      '<button type="button" class="btn soft acc a-green" id="cYes">' + icon("check") + '<span>覚えた</span><kbd class="kb">D / →</kbd></button>' +
+      "</div></div>";
+    h += '<p class="kbd-hint">キーボード：<kbd>Space</kbd>・<kbd>S</kbd> 答えの表示／非表示　<kbd>A</kbd>・<kbd>←</kbd> まだ　<kbd>D</kbd>・<kbd>→</kbd> 覚えた　<kbd>W</kbd> 記録せず次へ</p>';
+  }
+  $("#app").innerHTML = h;
+  bindCards();
+  settleTracks();
+}
+function bindCards() {
+  const det = $("#cSettings");
+  det.addEventListener("toggle", () => { settingsOpen = det.open; });
+  const restartWith = () => keepFocus(() => { savePrefs(); cs = newCardSession(); renderCards(); });
+  $("#cDeck").addEventListener("change", e => { prefs.cDeck = e.target.value; prefs.cGroup = ""; restartWith(); });
+  $("#cGroup").addEventListener("change", e => { prefs.cGroup = e.target.value; restartWith(); });
+  $("#cFilter").addEventListener("change", e => { prefs.cFilter = e.target.value; restartWith(); });
+  bindSeg("cOrder", v => { prefs.cOrder = v; restartWith(); }, 220);
+  $("#cSwap").addEventListener("change", e => { prefs.cSwap = e.target.checked; savePrefs(); setTimeout(() => keepFocus(renderCards), 220); });
+  const on = (id, fn) => { const el = $("#" + id); if (el) el.addEventListener("click", fn); };
+  on("cAll", () => { prefs.cFilter = "all"; restartWith(); });
+  on("cRestart", () => { restartWith(); riseIn(); });
+  on("cHome", () => go("home"));
+  on("cRetry", () => { const ids = cs.retryIds.slice(); cs = makeSession(ids, "「まだ」と記録なしのカードをもう一度（" + ids.length + "枚）"); renderCards(); riseIn(); });
+  on("cFlip", toggleCard);
+  on("cYes", () => answerCard("known"));
+  on("cNo", () => answerCard("again"));
+  on("cSkip", () => answerCard("skip"));
+  const c = $("#card");
+  if (c) c.addEventListener("click", toggleCard);
+}
+function focusCard() { const c = $("#card"); if (c) c.focus({ preventScroll: true }); }
+function cardActive() { return view === "cards" && cs && cs.queue.length && cs.i < cs.queue.length; }
+function toggleCard() { if (!cardActive()) return; cs.flipped = !cs.flipped; renderCards(); focusCard(); }
+function answerCard(kind) {
+  if (!cardActive()) return;
+  const id = cs.queue[cs.i];
+  if (kind === "known") { setCard(id, { s: 2 }); cs.known++; }
+  else if (kind === "again") { setCard(id, { s: 1 }); cs.again++; cs.retryIds.push(id); }
+  else { cs.skipped++; cs.retryIds.push(id); }
+  cs.i++; cs.flipped = false; cs.fresh = true;
+  renderCards(); focusCard();
+}
+
+/* ---------- mini test ---------- */
+let ts = null;
+const TYPE_ASK = { mean: "意味として正しいものはどれ？", read: "読み方として正しいものはどれ？" };
+function splitTokens(it, text) {
+  const re = it.deck === "w" ? /[、，,／\/]/ : it.deck === "k" ? /[／\/・]/ : /[\/／]/;
+  return String(text).split(re).map(x => x.replace(/（[^）]*）|[。\s]/g, "").replace(/^(疑問|反語)：/, "")).filter(Boolean);
+}
+function makeQuestion(it, type) {
+  const field = type === "read" ? "read" : "mean";
+  const correct = it[field];
+  const used = new Set(splitTokens(it, correct));
+  const opts = [{ text: correct, id: it.id }];
+  for (const x of shuffle(DECK[it.deck].items)) {
+    if (x.id === it.id) continue;
+    const t = x[field];
+    const toks = splitTokens(x, t);
+    if (!toks.length || toks.some(k => used.has(k)) || opts.some(o => o.text === t)) continue;
+    toks.forEach(k => used.add(k));
+    opts.push({ text: t, id: x.id });
+    if (opts.length === 4) break;
+  }
+  const mixed = shuffle(opts);
+  return { id: it.id, type, opts: mixed, ans: mixed.findIndex(o => o.id === it.id) };
+}
+function optHTML(it, text, type) {
+  if (it.deck === "k" && type === "read") return mk(text);
+  if (it.deck === "s") return fmtAlt(text);
+  return esc(text);
+}
+function startTest() {
+  let pool = itemsOf(prefs.tDeck, prefs.tGroup).slice();
+  if (prefs.tPrio === "weak") {
+    const r = new Map(pool.map(it => [it.id, Math.random()]));
+    pool.sort((a, b) => card(a.id).s - card(b.id).s || card(b.id).w - card(a.id).w || r.get(a.id) - r.get(b.id));
+  } else pool = shuffle(pool);
+  const picked = shuffle(pool.slice(0, Math.min(+prefs.tN, pool.length)));
+  ts = { phase: "q", qs: picked.map(it => makeQuestion(it, prefs.tType)), i: 0, picked: null, ok: 0, wrong: [], deck: prefs.tDeck, type: prefs.tType, lastPct: null };
+  renderTest();
+  riseIn();
+  window.scrollTo(0, 0);
+}
+function renderTest() {
+  if (!ts || ts.phase === "setup") return renderTestSetup();
+  if (ts.phase === "done") return renderTestResult();
+  const q = ts.qs[ts.i];
+  const it = ITEM[q.id];
+  const answered = ts.picked !== null;
+  let h = '<div class="sbar"><span class="num">問 <b>' + (ts.i + 1) + "</b> / " + ts.qs.length + "</span>" + trackHTML(ts, ts.i / ts.qs.length * 100) + '<span class="sb-ok num">' + icon("check") + "正解 " + ts.ok + "</span></div>";
+  h += '<section class="card q-card"><div class="q-ask">' + deckChip(it.deck, DECK[it.deck].short + " No." + it.no) + '<p class="q">' + TYPE_ASK[q.type] + '</p></div><div class="q-term">' + termHTML(it) + "</div></section>";
+  h += '<div class="options" role="group" aria-label="選択肢">' + q.opts.map((o, i) => {
+    let cls = "opt", mark = "";
+    if (answered) {
+      if (i === q.ans) { cls += " acc a-green is-correct"; mark = "<i>" + icon("check") + '</i><span class="lbl">正解</span>'; }
+      else if (i === ts.picked) { cls += " acc a-coral is-wrong"; mark = "<i>" + icon("x") + '</i><span class="lbl">あなたの答え</span>'; }
+      else cls += " dim";
+    }
+    const kan = q.type === "read" ? " kan" : "";
+    return '<button type="button" class="' + cls + '" data-i="' + i + '"' + (answered ? " disabled" : "") + '><span class="key num">' + (i + 1) + '</span><span class="t' + kan + '">' + optHTML(it, o.text, q.type) + '</span><span class="mark">' + mark + "</span></button>";
+  }).join("") + "</div>";
+  if (answered) {
+    const ok = ts.picked === q.ans;
+    h += '<section class="card fb acc ' + (ok ? "a-green" : "a-coral") + '"><div class="verdict"><span class="v-ic">' + icon(ok ? "check" : "x") + "</span>" + (ok ? "正解" : "不正解") + "</div>" +
+      rowHTML("読み", "ans-read", readHTML(it)) + rowHTML("意味", "ans-mean", meanHTML(it)) + (it.deck === "k" ? exHTML(it) : "") + "</section>";
+    h += '<div class="row end"><button type="button" class="btn primary" id="tNext">' + (ts.i + 1 < ts.qs.length ? "次の問題へ" : "結果を見る") + icon("arrow", "arrow") + "</button></div>";
+  }
+  h += '<p class="kbd-hint">キーボード：<kbd>1</kbd>〜<kbd>4</kbd> 選ぶ　<kbd>Enter</kbd> 次へ</p>';
+  $("#app").innerHTML = h;
+  settleTracks();
+  $("#app").querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => pickOption(+b.dataset.i)));
+  const nx = $("#tNext");
+  if (nx) { nx.addEventListener("click", nextQuestion); nx.focus({ preventScroll: true }); }
+}
+function pickOption(i) {
+  if (!ts || ts.phase !== "q" || ts.picked !== null) return;
+  const q = ts.qs[ts.i];
+  if (i < 0 || i >= q.opts.length) return;
+  ts.picked = i;
+  const c = card(q.id);
+  if (i === q.ans) { ts.ok++; setCard(q.id, { s: 2, c: c.c + 1 }); }
+  else { ts.wrong.push({ id: q.id, type: q.type, yours: q.opts[i].text }); setCard(q.id, { s: 1, w: c.w + 1 }); }
+  renderTest();
+}
+function nextQuestion() {
+  if (!ts || ts.picked === null) return;
+  ts.i++; ts.picked = null;
+  if (ts.i >= ts.qs.length) {
+    ts.phase = "done";
+    store.tests.push({ d: Date.now(), deck: ts.deck, type: ts.type, n: ts.qs.length, ok: ts.ok });
+    if (store.tests.length > 30) store.tests = store.tests.slice(-30);
+    persist();
+  }
+  renderTest();
+  riseIn();
+  window.scrollTo(0, 0);
+}
+function renderTestSetup() {
+  const pool = itemsOf(prefs.tDeck, prefs.tGroup);
+  const c = countOf(pool);
+  let h = '<section class="card"><div class="sec-h"><h2 class="h2">ミニテスト</h2><span class="cap">4択</span></div><div class="controls">' +
+    selectHTML("tDeck", "教材", deckOptions(), prefs.tDeck) +
+    selectHTML("tGroup", "範囲", groupOptions(prefs.tDeck), prefs.tGroup, prefs.tDeck === "all") +
+    segHTML("tType", "問題の形式", [["mean", "意味を選ぶ"], ["read", "読み方を選ぶ"]], prefs.tType) +
+    segHTML("tN", "問題数", [[5, "5問"], [10, "10問"], [20, "20問"], [30, "30問"]], prefs.tN) +
+    segHTML("tPrio", "出題のしかた", [["weak", "覚えていないものを優先"], ["random", "ランダム"]], prefs.tPrio, true) +
+    "</div>" +
+    statsHTML(c) +
+    '<p class="note">この範囲は' + c.total + "項目です。4択で答えます。正解した項目は「覚えた」、間違えた項目は「あいまい」として記録されます。</p>" +
+    '<div class="row"><button type="button" class="btn accent lg" id="tStart"' + (c.total ? "" : " disabled") + ">テストを始める" + icon("arrow", "arrow") + "</button></div></section>";
+  $("#app").innerHTML = h;
+  const re = () => keepFocus(() => { savePrefs(); renderTestSetup(); });
+  $("#tDeck").addEventListener("change", e => { prefs.tDeck = e.target.value; prefs.tGroup = ""; re(); });
+  $("#tGroup").addEventListener("change", e => { prefs.tGroup = e.target.value; re(); });
+  bindSeg("tType", v => { prefs.tType = v; savePrefs(); });
+  bindSeg("tN", v => { prefs.tN = +v; savePrefs(); });
+  bindSeg("tPrio", v => { prefs.tPrio = v; savePrefs(); });
+  $("#tStart").addEventListener("click", startTest);
+}
+function renderTestResult() {
+  const n = ts.qs.length, rate = n ? Math.round(ts.ok / n * 100) : 0;
+  const good = rate >= 80;
+  let h = '<section class="card"><p class="over">テスト結果・' + esc(deckLabel(ts.deck)) + "・" + (ts.type === "read" ? "読み方" : "意味") + "</p>" +
+    '<div class="res-h' + (good ? " acc a-green" : "") + '">' + ringHTML(96, [[rate, "a"]], "正答率 " + rate + "%", rate + "<small>%</small>") +
+    '<div><p class="big">' + ts.ok + "<small>/ " + n + ' 問正解</small></p><p class="sub">正答率 ' + rate + "%</p></div></div>";
+  if (ts.wrong.length) {
+    h += '<h3 class="h3">間違えた問題</h3><ul class="miss-list">' + ts.wrong.map(w => {
+      const it = ITEM[w.id];
+      const field = w.type === "read" ? "read" : "mean";
+      return '<li><div class="miss-txt">' + deckChip(it.deck, DECK[it.deck].short + " No." + it.no) +
+        '<div class="miss-line ok-l">' + icon("check") + '<div><span class="lbl">正解</span><div class="v">' + optHTML(it, it[field], w.type) + "</div></div></div>" +
+        '<div class="miss-line ng-l">' + icon("x") + '<div><span class="lbl">あなたの答え</span><div class="v">' + optHTML(it, w.yours, w.type) + "</div></div></div></div>" + termHTML(it) + "</li>";
+    }).join("") + "</ul>";
+  } else h += '<div class="alert acc a-green">' + icon("okc") + "<div><b>全問正解です。</b></div></div>";
+  h += '<div class="row">' + (ts.wrong.length ? '<button type="button" class="btn primary" id="tReview">' + icon("cards") + "間違えた" + ts.wrong.length + "問をカードで復習</button>" : "") +
+    '<button type="button" class="btn secondary" id="tAgain">同じ条件でもう一度</button><button type="button" class="btn secondary" id="tSetup">設定を変える</button></div></section>';
+  $("#app").innerHTML = h;
+  const r = $("#tReview");
+  if (r) r.addEventListener("click", () => {
+    const ids = ts.wrong.map(w => w.id);
+    cs = makeSession(ids, "テストで間違えた問題（" + ids.length + "枚）");
+    go("cards");
+  });
+  $("#tAgain").addEventListener("click", startTest);
+  $("#tSetup").addEventListener("click", () => { ts = null; renderTest(); riseIn(); });
+}
+
+/* ---------- keyboard ---------- */
+document.addEventListener("keydown", e => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const tag = e.target && e.target.tagName;
+  if (tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA") return;
+  const key = e.key || "", code = e.code || "", low = key.toLowerCase();
+  const isSpace = key === " " || code === "Space";
+  if (cardActive()) {
+    // フォーカス中のボタンやメニューは Space / Enter で普通に押せるようにする
+    if ((isSpace || key === "Enter") && (tag === "BUTTON" || tag === "SUMMARY")) return;
+    let act = null;
+    if (isSpace || code === "KeyS" || low === "s") act = "toggle";
+    else if (code === "KeyA" || low === "a" || key === "ArrowLeft") act = "again";
+    else if (code === "KeyD" || low === "d" || key === "ArrowRight") act = "known";
+    else if (code === "KeyW" || low === "w") act = "skip";
+    else if (key === "Enter" && e.target.id === "card") act = "toggle";
+    if (!act) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (act === "toggle") toggleCard(); else answerCard(act);
+  } else if (view === "test" && ts && ts.phase === "q") {
+    if (ts.picked === null && /^[1-4]$/.test(key)) { e.preventDefault(); pickOption(+key - 1); }
+    else if (ts.picked !== null && key === "Enter" && tag !== "BUTTON") { e.preventDefault(); nextQuestion(); }
+  }
+});
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function showToast(msg) {
+  const host = $("#toastHost");
+  clearTimeout(toastTimer);
+  host.innerHTML = '<div class="toast" role="status"><span class="t-ok">' + icon("check") + "</span>" + esc(msg) + "</div>";
+  toastTimer = setTimeout(() => { host.innerHTML = ""; }, 2700);
+}
+
+/* ---------- reset ---------- */
+function bindReset() {
+  const area = $("#resetArea");
+  area.innerHTML = '<button type="button" class="btn ghost sm" id="resetBtn">' + icon("trash") + "進捗をリセット</button>";
+  $("#resetBtn").addEventListener("click", openResetDialog);
+}
+function openResetDialog() {
+  if ($("#resetOverlay")) return;
+  const ov = document.createElement("div");
+  ov.className = "overlay"; ov.id = "resetOverlay";
+  ov.innerHTML = '<div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="resetTitle" aria-describedby="resetDesc">' +
+    '<span class="d-ic acc a-coral">' + icon("warn") + "</span>" +
+    '<h2 id="resetTitle">進捗をリセットしますか？</h2>' +
+    '<p id="resetDesc">覚えた・あいまいの記録とテスト結果がすべて消えます。元には戻せません。</p>' +
+    '<div class="dialog-actions"><button type="button" class="btn soft acc a-coral" id="resetYes">' + icon("trash") + '消す</button><button type="button" class="btn primary" id="resetNo">やめる</button></div></div>';
+  document.body.appendChild(ov);
+  const close = () => { ov.remove(); document.removeEventListener("keydown", onKey, true); const b = $("#resetBtn"); if (b) b.focus(); };
+  const onKey = e => { if (e.key === "Escape") { e.preventDefault(); close(); } else if (e.key !== "Tab" && e.key !== "Enter" && e.key !== " ") { e.stopPropagation(); } };
+  document.addEventListener("keydown", onKey, true);
+  ov.addEventListener("click", e => { if (e.target === ov) close(); });
+  $("#resetNo").addEventListener("click", close);
+  $("#resetYes").addEventListener("click", () => {
+    store = blankStore(); persist();
+    if (cloud.timer) { clearTimeout(cloud.timer); flushCloud(); }
+    cs = null; ts = null; close(); entering = true; render();
+    showToast("進捗をリセットしました");
+  });
+  $("#resetNo").focus();
+}
+
+bindReset();
+render();
+initCloud();
+</script>
+</body>
+</html>
